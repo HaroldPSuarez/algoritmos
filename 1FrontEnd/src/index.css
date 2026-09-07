@@ -1,0 +1,51 @@
+/* ================================
+   BASE DEL DOCUMENTO
+   ================================ */
+
+:root {
+  font-family: 'Inter', sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: dark;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+
+/* ================================
+   HTML
+   ================================ */
+
+html {
+  width: 100%;
+  min-height: 100%;
+
+  background: #15100c;
+}
+
+
+/* ================================
+   BODY
+   ================================ */
+
+body {
+  margin: 0;
+
+  min-width: 320px;
+  min-height: 100vh;
+
+  background: #15100c;
+}
+
+
+/* ================================
+   ROOT DE REACT
+   ================================ */
+
+#root {
+  min-height: 100vh;
+}

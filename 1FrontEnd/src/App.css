@@ -1,0 +1,153 @@
+/* ================================
+   RESET GLOBAL
+   ================================ */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  width: 100%;
+  min-height: 100%;
+}
+
+body {
+  width: 100%;
+  min-height: 100vh;
+
+  font-family: 'Inter', sans-serif;
+
+  background: #15100c;
+  color: #f3e9da;
+
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+
+/* ================================
+   ROOT DE REACT
+   ================================ */
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+}
+
+
+/* ================================
+   ELEMENTOS GENERALES
+   ================================ */
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+
+/* ================================
+   ENLACES
+   ================================ */
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: none;
+}
+
+
+/* ================================
+   SELECCIÓN DE TEXTO
+   ================================ */
+
+::selection {
+  background: #c08a3e;
+  color: #15100c;
+}
+
+
+/* ================================
+   SCROLLBAR
+   ================================ */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #15100c;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #4a3a28;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #c08a3e;
+}
+
+
+/* ================================
+   ACCESIBILIDAD
+   ================================ */
+
+:focus-visible {
+  outline: 2px solid #d9a855;
+  outline-offset: 2px;
+}
+
+
+/* ================================
+   RESPONSIVE
+   ================================ */
+
+@media (max-width: 768px) {
+  body {
+    font-size: 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  body {
+    font-size: 14px;
+  }
+}
+
+
+/* ================================
+   REDUCIR ANIMACIONES
+   ================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
