@@ -24,7 +24,7 @@ PowerShell
 Inicia el servidor de desarrollo mediante Uvicorn:
 
 PowerShell
-uvicorn main:app --reload
+uvicorn main:app --reload --port 8000
 Una vez encendido, puedes verificar que se encuentra operando exitosamente ingresando a tu navegador en la ruta [http://127.0.0.1:8000/](http://127.0.0.1:8000/).
 
 Configuración y Ejecución del Frontend:
