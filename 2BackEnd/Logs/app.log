@@ -1,0 +1,3 @@
+2026-09-08 23:57:01 | INFO | app | ¡El backend de Bar Pola y Punto está corriendo exitosamente!
+2026-09-08 23:57:50 | INFO | app | Se toman los datos del usuario: <app.models.models_service.Usuario object at 0x0000017928A86270>
+2026-09-08 23:57:51 | INFO | app | El acceso se crea: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbkBiYXJwb2xheXB1bnRvLmNvbSIsInJvbGUiOjEsImV4cCI6MTc4ODkzMTY3MX0.YywIHMwAPMdYgL0To9bO6cs1zd-41PbVE-ZFUwMH7t4
