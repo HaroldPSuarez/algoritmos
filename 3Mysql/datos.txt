@@ -1,0 +1,206 @@
+-- =========================================================
+-- Sistema de Gestión Integral - Bar Pola y Punto
+-- Script completo de base de datos (MySQL 8+)
+-- Va en la carpeta 3Mysql/
+-- =========================================================
+
+CREATE DATABASE IF NOT EXISTS bar_pola_y_punto
+    CHARACTER SET utf8mb4
+    COLLATE utf8mb4_unicode_ci;
+
+USE bar_pola_y_punto;
+
+-- =========================================================
+-- 1. SEDES
+-- =========================================================
+CREATE TABLE IF NOT EXISTS sedes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    direccion VARCHAR(200) NOT NULL,
+    telefono VARCHAR(20),
+    estado BOOLEAN DEFAULT TRUE
+) ENGINE=InnoDB;
+
+-- =========================================================
+-- 2. ROLES
+-- =========================================================
+CREATE TABLE IF NOT EXISTS roles (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(50) NOT NULL UNIQUE,
+    descripcion VARCHAR(200)
+) ENGINE=InnoDB;
+
+-- =========================================================
+-- 3. USUARIOS
+-- =========================================================
+CREATE TABLE IF NOT EXISTS usuarios (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre_completo VARCHAR(100) NOT NULL,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    hashed_password VARCHAR(255) NOT NULL,
+    estado BOOLEAN DEFAULT TRUE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    id_rol INT NOT NULL,
+    id_sede INT,
+    FOREIGN KEY (id_rol) REFERENCES roles(id),
+    FOREIGN KEY (id_sede) REFERENCES sedes(id)
+) ENGINE=InnoDB;
+
+-- =========================================================
+-- 4. MESAS
+-- =========================================================
+CREATE TABLE IF NOT EXISTS mesas (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    numero INT NOT NULL,
+    capacidad INT DEFAULT 4,
+    estado ENUM('disponible', 'ocupada') DEFAULT 'disponible',
+    id_sede INT NOT NULL,
+    FOREIGN KEY (id_sede) REFERENCES sedes(id),
+    UNIQUE KEY uq_mesa_sede (id_sede, numero)
+) ENGINE=InnoDB;
+
+-- =========================================================
+-- 5. PRODUCTOS
+-- =========================================================
+CREATE TABLE IF NOT EXISTS productos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    categoria VARCHAR(50),
+    precio DECIMAL(10,2) NOT NULL,
+    estado BOOLEAN DEFAULT TRUE
+) ENGINE=InnoDB;
+
+-- =========================================================
+-- 6. INVENTARIO
+-- =========================================================
+CREATE TABLE IF NOT EXISTS inventario (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    id_producto INT NOT NULL,
+    id_sede INT NOT NULL,
+    cantidad INT NOT NULL DEFAULT 0,
+    stock_minimo INT DEFAULT 0,
+    actualizado_en DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_producto) REFERENCES productos(id),
+    FOREIGN KEY (id_sede) REFERENCES sedes(id),
+    UNIQUE KEY uq_producto_sede (id_producto, id_sede)
+) ENGINE=InnoDB;
+
+-- =========================================================
+-- 7. MOVIMIENTOS_INVENTARIO
+-- =========================================================
+CREATE TABLE IF NOT EXISTS movimientos_inventario (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    id_inventario INT NOT NULL,
+    tipo ENUM('entrada', 'salida') NOT NULL,
+    cantidad INT NOT NULL,
+    motivo VARCHAR(200),
+    id_usuario INT NOT NULL,
+    creado_en DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_inventario) REFERENCES inventario(id),
+    FOREIGN KEY (id_usuario) REFERENCES usuarios(id)
+) ENGINE=InnoDB;
+
+-- =========================================================
+-- 8. PEDIDOS
+-- =========================================================
+CREATE TABLE IF NOT EXISTS pedidos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    id_mesa INT NOT NULL,
+    id_mesero INT NOT NULL,
+    id_sede INT NOT NULL,
+    estado ENUM('activo', 'pagado', 'cancelado') DEFAULT 'activo',
+    total DECIMAL(10,2) DEFAULT 0,
+    creado_en DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_mesa) REFERENCES mesas(id),
+    FOREIGN KEY (id_mesero) REFERENCES usuarios(id),
+    FOREIGN KEY (id_sede) REFERENCES sedes(id)
+) ENGINE=InnoDB;
+
+-- =========================================================
+-- 9. DETALLE_PEDIDOS
+-- =========================================================
+CREATE TABLE IF NOT EXISTS detalle_pedidos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    id_pedido INT NOT NULL,
+    id_producto INT NOT NULL,
+    cantidad INT NOT NULL,
+    precio_unitario DECIMAL(10,2) NOT NULL,
+    subtotal DECIMAL(10,2) GENERATED ALWAYS AS (cantidad * precio_unitario) STORED,
+    FOREIGN KEY (id_pedido) REFERENCES pedidos(id),
+    FOREIGN KEY (id_producto) REFERENCES productos(id)
+) ENGINE=InnoDB;
+
+-- =========================================================
+-- 10. PAGOS
+-- =========================================================
+CREATE TABLE IF NOT EXISTS pagos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    id_pedido INT NOT NULL,
+    id_cajero INT NOT NULL,
+    metodo ENUM('efectivo', 'tarjeta_debito', 'tarjeta_credito') NOT NULL,
+    monto DECIMAL(10,2) NOT NULL,
+    numero_factura VARCHAR(30) UNIQUE,
+    creado_en DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_pedido) REFERENCES pedidos(id),
+    FOREIGN KEY (id_cajero) REFERENCES usuarios(id)
+) ENGINE=InnoDB;
+
+-- =========================================================
+-- 11. AUDITORIA
+-- =========================================================
+CREATE TABLE IF NOT EXISTS auditoria (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    id_usuario INT NOT NULL,
+    accion VARCHAR(150) NOT NULL,
+    id_sede INT,
+    creado_en DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_usuario) REFERENCES usuarios(id),
+    FOREIGN KEY (id_sede) REFERENCES sedes(id)
+) ENGINE=InnoDB;
+
+-- =========================================================
+-- Índices adicionales
+-- =========================================================
+CREATE INDEX idx_pedidos_estado ON pedidos(estado);
+CREATE INDEX idx_mesas_estado ON mesas(estado);
+CREATE INDEX idx_auditoria_usuario ON auditoria(id_usuario);
+
+
+-- =========================================================
+-- =========================================================
+-- DATOS OBLIGATORIOS (no son "datos de ejemplo", son catálogo
+-- fijo del sistema: sin roles, ni el login funciona)
+-- =========================================================
+-- =========================================================
+
+INSERT IGNORE INTO roles (nombre, descripcion) VALUES
+    ('Administrador', 'Control total del sistema'),
+    ('Mesero', 'Gestión de mesas y pedidos'),
+    ('Cajero', 'Gestión de pagos y facturación');
+
+-- Usuario Administrador principal.
+-- Correo:      admin@barpolaypunto.com
+-- Contraseña:  admin123
+-- (hash bcrypt generado para que coincida con la lógica del backend)
+INSERT IGNORE INTO usuarios (nombre_completo, email, hashed_password, estado, id_rol, id_sede)
+SELECT 'Administrador Principal', 'admin@barpolaypunto.com',
+       '$2b$12$/ww5TvSf3xxLjoXJ2e1zu..BEBvZiin07mXfjc6DVKB0jpN6CkIla',
+       TRUE,
+       (SELECT id FROM roles WHERE nombre = 'Administrador'),
+       NULL
+WHERE NOT EXISTS (SELECT 1 FROM usuarios WHERE email = 'admin@barpolaypunto.com');
+
+
+-- =========================================================
+-- =========================================================
+-- BLOQUE OPCIONAL — SOLO PARA PRUEBAS EN LOCAL
+-- Comenta o elimina este bloque completo antes de desplegar
+-- a producción. La base de producción debe iniciar vacía:
+-- el Admin crea sedes, productos, usuarios, etc. desde la app.
+-- =========================================================
+-- =========================================================
+
+-- INSERT IGNORE INTO productos (nombre, categoria, precio, estado) VALUES
+--     ('Cerveza Club Colombia', 'Bebida', 8000.00, TRUE),
+--     ('Papas a la francesa', 'Comida', 12000.00, TRUE),
+--     ('Limonada natural', 'Bebida', 7000.00, TRUE);

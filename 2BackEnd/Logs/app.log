@@ -1,3 +1,23 @@
 2026-09-08 23:57:01 | INFO | app | ¡El backend de Bar Pola y Punto está corriendo exitosamente!
 2026-09-08 23:57:50 | INFO | app | Se toman los datos del usuario: <app.models.models_service.Usuario object at 0x0000017928A86270>
 2026-09-08 23:57:51 | INFO | app | El acceso se crea: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbkBiYXJwb2xheXB1bnRvLmNvbSIsInJvbGUiOjEsImV4cCI6MTc4ODkzMTY3MX0.YywIHMwAPMdYgL0To9bO6cs1zd-41PbVE-ZFUwMH7t4
+2026-09-27 18:29:22 | INFO | app | ¡El backend de Bar Pola y Punto está corriendo exitosamente!
+2026-09-27 18:32:09 | INFO | app | Se toman los datos del usuario: None
+2026-09-27 18:32:09 | INFO | app | No se verificó datos de usuario
+2026-09-27 18:36:21 | INFO | app | ¡El backend de Bar Pola y Punto está corriendo exitosamente!
+2026-09-27 18:36:25 | INFO | app | Se toman los datos del usuario: None
+2026-09-27 18:36:25 | INFO | app | No se verificó datos de usuario
+2026-09-27 18:36:27 | INFO | app | Se toman los datos del usuario: None
+2026-09-27 18:36:27 | INFO | app | No se verificó datos de usuario
+2026-09-27 18:39:05 | INFO | app | Se toman los datos del usuario: <app.models.models_service.Usuario object at 0x00000199D4730980>
+2026-09-27 18:39:05 | INFO | app | El acceso se crea: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbkBiYXJwb2xheXB1bnRvLmNvbSIsInJvbGUiOjEsImV4cCI6MTc5MDU1NDE0NX0.CLqgUMjLD1wTDCWrLlBi3FrQC4kHTmmML0qAlToQ2Vc
+2026-09-27 18:39:10 | INFO | app | Se toman los datos del usuario: <app.models.models_service.Usuario object at 0x00000199D4773110>
+2026-09-27 18:39:11 | INFO | app | El acceso se crea: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbkBiYXJwb2xheXB1bnRvLmNvbSIsInJvbGUiOjEsImV4cCI6MTc5MDU1NDE1MX0.Clb_3d75okD55gREy064qbSQ9oEDrdENvulwG_yNTso
+2026-09-27 18:45:45 | INFO | app | Se toman los datos del usuario: <app.models.models_service.Usuario object at 0x00000199D4773390>
+2026-09-27 18:45:45 | INFO | app | El acceso se crea: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbkBiYXJwb2xheXB1bnRvLmNvbSIsInJvbGUiOjEsImV4cCI6MTc5MDU1NDU0NX0.fYmiCmcIdDAnsJN0slCQc_-Uy9GXYDlodZ6-lSwdw18
+2026-09-27 19:06:01 | INFO | app | Se toman los datos del usuario: <app.models.models_service.Usuario object at 0x00000199D4860180>
+2026-09-27 19:06:02 | INFO | app | El acceso se crea: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbkBiYXJwb2xheXB1bnRvLmNvbSIsInJvbGUiOjEsImV4cCI6MTc5MDU1NTc2Mn0.ZRiE1klMsJZ8XQ8G367y-DM0lFFQye7nnCK966cPC6o
+2026-09-27 19:06:09 | INFO | app | Se toman los datos del usuario: <app.models.models_service.Usuario object at 0x00000199D4860180>
+2026-09-27 19:06:09 | INFO | app | El acceso se crea: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbkBiYXJwb2xheXB1bnRvLmNvbSIsInJvbGUiOjEsImV4cCI6MTc5MDU1NTc2OX0.M8y7cZ3__FvrcEqkk5t5A4WKS0tsNZ3UPl2SfSt3eu8
+2026-09-27 19:07:29 | INFO | app | Se toman los datos del usuario: <app.models.models_service.Usuario object at 0x00000199D4884CB0>
+2026-09-27 19:07:29 | INFO | app | El acceso se crea: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbkBiYXJwb2xheXB1bnRvLmNvbSIsInJvbGUiOjEsImV4cCI6MTc5MDU1NTg0OX0.o018ifmN6J-Tmd_f2zodeX0gispvE5hTXBmp2jY0QJY

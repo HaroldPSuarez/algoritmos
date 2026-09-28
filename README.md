@@ -46,3 +46,6 @@ Credenciales de Acceso Administrador
 Correo electrónico: admin@barpolaypunto.com
 
 Contraseña: admin123
+
+
+la base de datos esta en la carpeta 3 ejecutar el query en mysql para crear la base de datos con el usuario admin que tiene el correo y contraseña antes nombrado al final del txt se encuentran 3 productos con esto se puede presentar prueba de funcnionamiento de agregar productos visuales etc en el panel admin 
