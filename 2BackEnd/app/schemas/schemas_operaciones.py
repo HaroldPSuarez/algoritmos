@@ -107,3 +107,29 @@ class PagoResponse(BaseModel):
     creado_en: datetime
     class Config:
         from_attributes = True
+        # AGREGAR a app/schemas/schemas_operaciones.py
+
+from datetime import date as date_type
+
+class AuditoriaResponse(BaseModel):
+    id: int
+    id_usuario: int
+    accion: str
+    id_sede: Optional[int]
+    creado_en: datetime
+    class Config:
+        from_attributes = True
+
+
+class ReporteVentasItem(BaseModel):
+    id_sede: int
+    fecha: date_type
+    cantidad_ventas: int
+    total_vendido: Decimal
+
+
+class ReporteInventarioItem(BaseModel):
+    id_sede: int
+    nombre: str
+    cantidad: int
+    stock_minimo: int

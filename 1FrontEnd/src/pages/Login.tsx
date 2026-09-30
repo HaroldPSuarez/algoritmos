@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
+import { parseJwt, ROL_ADMINISTRADOR, ROL_MESERO, ROL_CAJERO } from '../utils/jwt';
 import './Login.css';
 
 export default function Login() {
@@ -23,14 +24,21 @@ export default function Login() {
         password,
       });
 
-      // Guardar token
-      localStorage.setItem('token', response.data.access_token);
+      const token = response.data.access_token;
+      localStorage.setItem('token', token);
 
-      // Mensaje de éxito
-      alert('¡Inicio de sesión exitoso!');
+      const payload = parseJwt(token);
+      const rol = payload?.role;
 
-      // Ir a sedes después de aceptar el mensaje
-      navigate('/sedes');
+      if (rol === ROL_ADMINISTRADOR) {
+        navigate('/admin');
+      } else if (rol === ROL_MESERO) {
+        navigate('/mesas');
+      } else if (rol === ROL_CAJERO) {
+        navigate('/caja');
+      } else {
+        navigate('/login');
+      }
 
     } catch (err) {
       setError('Correo o contraseña incorrectos');

@@ -21,3 +21,12 @@
 2026-09-27 19:06:09 | INFO | app | El acceso se crea: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbkBiYXJwb2xheXB1bnRvLmNvbSIsInJvbGUiOjEsImV4cCI6MTc5MDU1NTc2OX0.M8y7cZ3__FvrcEqkk5t5A4WKS0tsNZ3UPl2SfSt3eu8
 2026-09-27 19:07:29 | INFO | app | Se toman los datos del usuario: <app.models.models_service.Usuario object at 0x00000199D4884CB0>
 2026-09-27 19:07:29 | INFO | app | El acceso se crea: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbkBiYXJwb2xheXB1bnRvLmNvbSIsInJvbGUiOjEsImV4cCI6MTc5MDU1NTg0OX0.o018ifmN6J-Tmd_f2zodeX0gispvE5hTXBmp2jY0QJY
+2026-09-29 21:59:39 | INFO | app | ¡El backend de Bar Pola y Punto está corriendo exitosamente!
+2026-09-29 22:10:57 | INFO | app | Se toman los datos del usuario: <app.models.models_service.Usuario object at 0x0000027298031010>
+2026-09-29 22:10:58 | INFO | app | El acceso se crea: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbkBiYXJwb2xheXB1bnRvLmNvbSIsInJvbGUiOjEsImV4cCI6MTc5MDczOTY1OH0.RL4F8sWTU68tf190QfX1w0YWLZOVKZY7XlqR44GGcEs
+2026-09-29 22:11:30 | INFO | app | Se toman los datos del usuario: <app.models.models_service.Usuario object at 0x0000027298170830>
+2026-09-29 22:11:30 | INFO | app | El acceso se crea: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbkBiYXJwb2xheXB1bnRvLmNvbSIsInJvbGUiOjEsImV4cCI6MTc5MDczOTY5MH0.3XIzfNA6XO6v9qMhHk_JceXOwvX-kdWGgvqX8dmAskU
+2026-09-29 22:31:54 | INFO | app | Se toman los datos del usuario: <app.models.models_service.Usuario object at 0x0000027298178A50>
+2026-09-29 22:31:54 | INFO | app | El acceso se crea: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbkBiYXJwb2xheXB1bnRvLmNvbSIsInJvbGUiOjEsImV4cCI6MTc5MDc0MDkxNH0.8I02KE2HYB0gJCDsSCWjOdr3XDdOR_r9uE0R8LwVmT4
+2026-09-29 22:36:31 | INFO | app | Se toman los datos del usuario: <app.models.models_service.Usuario object at 0x000002729817B9D0>
+2026-09-29 22:36:31 | INFO | app | El acceso se crea: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbkBiYXJwb2xheXB1bnRvLmNvbSIsInJvbGUiOjEsImV4cCI6MTc5MDc0MTE5MX0.KSPbjz2nbLMBhGDQ0Ib7-FDBeeaWqbytKjnFxYw7408

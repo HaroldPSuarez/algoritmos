@@ -38,3 +38,10 @@ class SedeResponse(SedeCreate):
 
     class Config:
         from_attributes = True
+
+class SedeUpdate(BaseModel):
+    nombre: Optional[str] = None
+    direccion: Optional[str] = None
+    telefono: Optional[str] = None
+    estado: Optional[bool] = None
+ 

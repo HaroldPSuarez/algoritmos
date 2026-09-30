@@ -162,3 +162,48 @@ def registrar_pago(db: Session, pago: PagoCreate, id_cajero: int):
     db.refresh(db_pago)
     registrar_auditoria(db, id_cajero, f"Registró pago del pedido #{pedido.id}", pedido.id_sede)
     return db_pago
+
+# AGREGAR a app/services/services_operaciones.py:
+
+from sqlalchemy import func
+from app.models.models_operaciones import Auditoria, Pago, Pedido, Inventario, Producto, EstadoPedido
+
+
+def get_auditoria(db: Session, id_sede: int = None, limit: int = 100):
+    query = db.query(Auditoria).order_by(Auditoria.creado_en.desc())
+    if id_sede:
+        query = query.filter(Auditoria.id_sede == id_sede)
+    return query.limit(limit).all()
+
+
+def reporte_ventas(db: Session, id_sede: int = None, fecha_inicio=None, fecha_fin=None):
+    query = db.query(
+        Pedido.id_sede,
+        func.date(Pago.creado_en).label("fecha"),
+        func.count(Pago.id).label("cantidad_ventas"),
+        func.sum(Pago.monto).label("total_vendido"),
+    ).join(Pedido, Pago.id_pedido == Pedido.id)
+
+    if id_sede:
+        query = query.filter(Pedido.id_sede == id_sede)
+    if fecha_inicio:
+        query = query.filter(Pago.creado_en >= fecha_inicio)
+    if fecha_fin:
+        query = query.filter(Pago.creado_en <= fecha_fin)
+
+    query = query.group_by(Pedido.id_sede, func.date(Pago.creado_en))
+    return query.all()
+
+
+def reporte_inventario(db: Session, id_sede: int = None):
+    query = db.query(
+        Inventario.id_sede,
+        Producto.nombre,
+        Inventario.cantidad,
+        Inventario.stock_minimo,
+    ).join(Producto, Inventario.id_producto == Producto.id)
+
+    if id_sede:
+        query = query.filter(Inventario.id_sede == id_sede)
+
+    return query.all()

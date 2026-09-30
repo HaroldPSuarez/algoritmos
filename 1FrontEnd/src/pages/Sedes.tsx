@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
 import api from "../api/axios";
+import Button from "../components/ui/Button";
+import { Input } from "../components/ui/FormField";
+import DataTable, { type Column } from "../components/ui/DataTable";
 import "./Sedes.css";
 
 interface Sede {
@@ -18,6 +21,11 @@ export default function Sedes() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const [editandoId, setEditandoId] = useState<number | null>(null);
+  const [editNombre, setEditNombre] = useState("");
+  const [editDireccion, setEditDireccion] = useState("");
+  const [editTelefono, setEditTelefono] = useState("");
+
   useEffect(() => {
     cargarSedes();
   }, []);
@@ -26,7 +34,7 @@ export default function Sedes() {
     try {
       const res = await api.get("/listar_sedes");
       setSedes(res.data);
-    } catch (err) {
+    } catch {
       setError("No se pudieron cargar las sedes");
     }
   };
@@ -35,14 +43,11 @@ export default function Sedes() {
     e.preventDefault();
     setError("");
     setLoading(true);
-
     try {
       await api.post("/crear_sedes", { nombre, direccion, telefono });
-
       setNombre("");
       setDireccion("");
       setTelefono("");
-
       cargarSedes();
     } catch (err: any) {
       setError(err?.response?.data?.detail || "Error al crear la sede");
@@ -51,173 +56,114 @@ export default function Sedes() {
     }
   };
 
-  return (
-    <div className="sedes-page">
+  const empezarEdicion = (sede: Sede) => {
+    setEditandoId(sede.id);
+    setEditNombre(sede.nombre);
+    setEditDireccion(sede.direccion);
+    setEditTelefono(sede.telefono || "");
+  };
 
-      <div className="sedes-header">
-        <div>
-          <span className="sedes-subtitle">GESTIÓN</span>
-          <h2>Sedes</h2>
-          <p>Administra las sedes registradas en el sistema.</p>
-        </div>
+  const guardarEdicion = async (id: number) => {
+    setError("");
+    try {
+      await api.put(`/sedes/${id}`, {
+        nombre: editNombre,
+        direccion: editDireccion,
+        telefono: editTelefono,
+      });
+      setEditandoId(null);
+      cargarSedes();
+    } catch (err: any) {
+      setError(err?.response?.data?.detail || "Error al actualizar la sede");
+    }
+  };
 
-        <div className="sedes-counter">
-          <span>{sedes.length}</span>
-          <small>Sedes registradas</small>
-        </div>
-      </div>
+  const desactivarSede = async (id: number) => {
+    if (!confirm("¿Desactivar esta sede? No se borrará, solo quedará inactiva.")) return;
+    setError("");
+    try {
+      await api.delete(`/sedes/${id}`);
+      cargarSedes();
+    } catch (err: any) {
+      setError(err?.response?.data?.detail || "Error al desactivar la sede");
+    }
+  };
 
-      <div className="sedes-content">
-
-        {/* Tabla */}
-        <section className="sedes-card">
-          <div className="card-header">
-            <div>
-              <h3>Listado de sedes</h3>
-              <p>Sedes disponibles actualmente</p>
-            </div>
+  const columns: Column<Sede>[] = [
+    {
+      header: "Nombre",
+      render: (sede) =>
+        editandoId === sede.id ? (
+          <input className="field__control" value={editNombre} onChange={(e) => setEditNombre(e.target.value)} />
+        ) : (
+          sede.nombre
+        ),
+    },
+    {
+      header: "Dirección",
+      render: (sede) =>
+        editandoId === sede.id ? (
+          <input className="field__control" value={editDireccion} onChange={(e) => setEditDireccion(e.target.value)} />
+        ) : (
+          sede.direccion
+        ),
+    },
+    {
+      header: "Teléfono",
+      render: (sede) =>
+        editandoId === sede.id ? (
+          <input className="field__control" value={editTelefono} onChange={(e) => setEditTelefono(e.target.value)} />
+        ) : (
+          sede.telefono || "—"
+        ),
+    },
+    {
+      header: "Estado",
+      render: (sede) => (
+        <span className={`badge ${sede.estado ? "badge--success" : "badge--muted"}`}>
+          {sede.estado ? "Activa" : "Inactiva"}
+        </span>
+      ),
+    },
+    {
+      header: "Acciones",
+      render: (sede) =>
+        editandoId === sede.id ? (
+          <div className="actions">
+            <Button size="sm" onClick={() => guardarEdicion(sede.id)}>Guardar</Button>
+            <Button size="sm" variant="ghost" onClick={() => setEditandoId(null)}>Cancelar</Button>
           </div>
-
-          <div className="table-container">
-            <table className="sedes-table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Nombre</th>
-                  <th>Dirección</th>
-                  <th>Teléfono</th>
-                  <th>Estado</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {sedes.map((sede) => (
-                  <tr key={sede.id}>
-                    <td>
-                      <span className="id-badge">
-                        #{sede.id}
-                      </span>
-                    </td>
-
-                    <td className="sede-name">
-                      {sede.nombre}
-                    </td>
-
-                    <td className="sede-address">
-                      {sede.direccion}
-                    </td>
-
-                    <td>
-                      {sede.telefono || "-"}
-                    </td>
-
-                    <td>
-                      <span
-                        className={
-                          sede.estado
-                            ? "status active"
-                            : "status inactive"
-                        }
-                      >
-                        <span className="status-dot"></span>
-                        {sede.estado ? "Activa" : "Inactiva"}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        {/* Crear sede */}
-        <section className="create-card">
-          <div className="card-header">
-            <div>
-              <span className="form-icon">＋</span>
-              <div>
-                <h3>Nueva sede</h3>
-                <p>Registra una nueva sede</p>
-              </div>
-            </div>
-          </div>
-
-          <form onSubmit={crearSede} className="sede-form">
-
-            <div className="input-group">
-              <label htmlFor="nombre">
-                Nombre
-              </label>
-
-              <input
-                id="nombre"
-                type="text"
-                placeholder="Ej. Sede Principal"
-                value={nombre}
-                onChange={(e) => setNombre(e.target.value)}
-                required
-              />
-            </div>
-
-            <div className="input-group">
-              <label htmlFor="direccion">
-                Dirección
-              </label>
-
-              <input
-                id="direccion"
-                type="text"
-                placeholder="Ej. Calle 123 #45-67"
-                value={direccion}
-                onChange={(e) => setDireccion(e.target.value)}
-                required
-              />
-            </div>
-
-            <div className="input-group">
-              <label htmlFor="telefono">
-                Teléfono
-                <span>Opcional</span>
-              </label>
-
-              <input
-                id="telefono"
-                type="text"
-                placeholder="Ej. 300 123 4567"
-                value={telefono}
-                onChange={(e) => setTelefono(e.target.value)}
-              />
-            </div>
-
-            {error && (
-              <div className="error-message">
-                <span>!</span>
-                {error}
-              </div>
+        ) : (
+          <div className="actions">
+            <Button size="sm" variant="secondary" onClick={() => empezarEdicion(sede)}>Editar</Button>
+            {sede.estado && (
+              <Button size="sm" variant="danger" onClick={() => desactivarSede(sede.id)}>Desactivar</Button>
             )}
+          </div>
+        ),
+    },
+  ];
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="create-button"
-            >
-              {loading ? (
-                <>
-                  <span className="spinner"></span>
-                  Creando...
-                </>
-              ) : (
-                <>
-                  <span>＋</span>
-                  Crear sede
-                </>
-              )}
-            </button>
+  return (
+    <div className="page">
+      <h1>Sedes</h1>
 
-          </form>
-        </section>
+      <DataTable columns={columns} data={sedes} keyField={(s) => s.id} emptyLabel="Todavía no hay sedes creadas" />
 
-      </div>
+      <section className="page__section">
+        <h2>Nueva sede</h2>
+        <form onSubmit={crearSede} className="form-grid">
+          <Input label="Nombre" value={nombre} onChange={(e) => setNombre(e.target.value)} required />
+          <Input label="Dirección" value={direccion} onChange={(e) => setDireccion(e.target.value)} required />
+          <Input label="Teléfono (opcional)" value={telefono} onChange={(e) => setTelefono(e.target.value)} />
+
+          {error && <p className="form-error">{error}</p>}
+
+          <Button type="submit" disabled={loading}>
+            {loading ? "Creando..." : "Crear sede"}
+          </Button>
+        </form>
+      </section>
     </div>
   );
 }

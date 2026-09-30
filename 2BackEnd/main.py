@@ -1,25 +1,27 @@
 import uvicorn
+from datetime import date
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from typing import List
 
 from app.config import get_db, Base, engine
-from app.services import get_user_by_email, create_user, get_sedes, create_sede
+from app.services import get_user_by_email, create_user, get_sedes, create_sede, update_sede, desactivar_sede
 from app.utils import verify_password, create_access_token, logger
 from app.utils.auth_deps import get_current_user, require_role
 from app.schemas import (
-    UsuarioCreate, UsuarioResponse, Token, LoginRequest, SedeCreate, SedeResponse
+    UsuarioCreate, UsuarioResponse, Token, LoginRequest, SedeCreate, SedeResponse, SedeUpdate
 )
 from app.schemas.schemas_operaciones import (
     MesaCreate, MesaResponse, ProductoCreate, ProductoResponse,
     InventarioCreate, InventarioResponse, PedidoCreate, PedidoResponse,
-    PagoCreate, PagoResponse
+    PagoCreate, PagoResponse, AuditoriaResponse, ReporteVentasItem, ReporteInventarioItem
 )
 from app.services.services_operaciones import (
     get_mesas, create_mesa, get_productos, create_producto,
     get_inventario_por_sede, registrar_entrada_inventario,
-    crear_pedido, get_pedidos_activos, cancelar_pedido, registrar_pago
+    crear_pedido, get_pedidos_activos, cancelar_pedido, registrar_pago,
+    get_auditoria, reporte_ventas, reporte_inventario
 )
 from app.models.models_service import Usuario
 
@@ -68,6 +70,22 @@ def listar_sedes(skip: int = 0, limit: int = 100, db: Session = Depends(get_db))
 @app.post("/crear_sedes", response_model=SedeResponse)
 def crear_sede(sede: SedeCreate, db: Session = Depends(get_db)):
     return create_sede(db=db, sede=sede)
+
+@app.put("/sedes/{id_sede}", response_model=SedeResponse)
+def editar_sede(id_sede: int, datos: SedeUpdate, db: Session = Depends(get_db),
+                 usuario: Usuario = Depends(require_role("Administrador"))):
+    sede_actualizada = update_sede(db, id_sede, datos)
+    if not sede_actualizada:
+        raise HTTPException(status_code=404, detail="Sede no encontrada")
+    return sede_actualizada
+
+@app.delete("/sedes/{id_sede}", response_model=SedeResponse)
+def eliminar_sede(id_sede: int, db: Session = Depends(get_db),
+                   usuario: Usuario = Depends(require_role("Administrador"))):
+    sede_desactivada = desactivar_sede(db, id_sede)
+    if not sede_desactivada:
+        raise HTTPException(status_code=404, detail="Sede no encontrada")
+    return sede_desactivada
 
 
 # ==================== USUARIOS ====================
@@ -137,6 +155,34 @@ def cancelar_pedido_endpoint(id_pedido: int, db: Session = Depends(get_db),
 def registrar_pago_endpoint(pago: PagoCreate, db: Session = Depends(get_db),
                              usuario: Usuario = Depends(require_role("Cajero", "Administrador"))):
     return registrar_pago(db, pago, usuario.id)
+
+
+# ==================== AUDITORÍA ====================
+@app.get("/auditoria", response_model=List[AuditoriaResponse])
+def listar_auditoria(id_sede: int = None, db: Session = Depends(get_db),
+                      usuario: Usuario = Depends(require_role("Administrador"))):
+    return get_auditoria(db, id_sede)
+
+
+# ==================== REPORTES ====================
+@app.get("/reportes/ventas", response_model=List[ReporteVentasItem])
+def obtener_reporte_ventas(id_sede: int = None, fecha_inicio: date = None, fecha_fin: date = None,
+                            db: Session = Depends(get_db),
+                            usuario: Usuario = Depends(require_role("Administrador"))):
+    resultados = reporte_ventas(db, id_sede, fecha_inicio, fecha_fin)
+    return [
+        {"id_sede": r.id_sede, "fecha": r.fecha, "cantidad_ventas": r.cantidad_ventas, "total_vendido": r.total_vendido}
+        for r in resultados
+    ]
+
+@app.get("/reportes/inventario", response_model=List[ReporteInventarioItem])
+def obtener_reporte_inventario(id_sede: int = None, db: Session = Depends(get_db),
+                                usuario: Usuario = Depends(require_role("Administrador"))):
+    resultados = reporte_inventario(db, id_sede)
+    return [
+        {"id_sede": r.id_sede, "nombre": r.nombre, "cantidad": r.cantidad, "stock_minimo": r.stock_minimo}
+        for r in resultados
+    ]
 
 
 if __name__ == "__main__":
