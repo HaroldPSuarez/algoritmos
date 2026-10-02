@@ -1,49 +1,68 @@
-# app/schemas/schemas_operaciones.py
-
 from pydantic import BaseModel
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, date
 from decimal import Decimal
 
 
-# ---------- MESAS ----------
+# =========================================================
+# MESAS
+# =========================================================
+
 class MesaBase(BaseModel):
     numero: int
     capacidad: int = 4
     id_sede: int
 
+
 class MesaCreate(MesaBase):
     pass
+
 
 class MesaResponse(MesaBase):
     id: int
     estado: str
+
     class Config:
         from_attributes = True
 
 
-# ---------- PRODUCTOS ----------
+# =========================================================
+# PRODUCTOS
+# =========================================================
+
 class ProductoBase(BaseModel):
     nombre: str
     categoria: Optional[str] = None
     precio: Decimal
 
+
 class ProductoCreate(ProductoBase):
     pass
+
 
 class ProductoResponse(ProductoBase):
     id: int
     estado: bool
+
     class Config:
         from_attributes = True
 
 
-# ---------- INVENTARIO ----------
+# =========================================================
+# INVENTARIO
+# =========================================================
+from pydantic import BaseModel
+
+class InventarioUpdate(BaseModel):
+    cantidad: int
+    stock_minimo: int
+
 class InventarioCreate(BaseModel):
     id_producto: int
     id_sede: int
     cantidad: int
     stock_minimo: int = 0
+
 
 class InventarioResponse(BaseModel):
     id: int
@@ -51,33 +70,42 @@ class InventarioResponse(BaseModel):
     id_sede: int
     cantidad: int
     stock_minimo: int
+
     class Config:
         from_attributes = True
 
+
 class MovimientoInventarioCreate(BaseModel):
     id_inventario: int
-    tipo: str  # "entrada" | "salida"
+    tipo: str
     cantidad: int
     motivo: Optional[str] = None
 
 
-# ---------- PEDIDOS ----------
+# =========================================================
+# PEDIDOS
+# =========================================================
+
 class DetallePedidoCreate(BaseModel):
     id_producto: int
     cantidad: int
+
 
 class PedidoCreate(BaseModel):
     id_mesa: int
     id_sede: int
     detalles: List[DetallePedidoCreate]
 
+
 class DetallePedidoResponse(BaseModel):
     id: int
     id_producto: int
     cantidad: int
     precio_unitario: Decimal
+
     class Config:
         from_attributes = True
+
 
 class PedidoResponse(BaseModel):
     id: int
@@ -88,14 +116,19 @@ class PedidoResponse(BaseModel):
     total: Decimal
     creado_en: datetime
     detalles: List[DetallePedidoResponse] = []
+
     class Config:
         from_attributes = True
 
 
-# ---------- PAGOS ----------
+# =========================================================
+# PAGOS
+# =========================================================
+
 class PagoCreate(BaseModel):
     id_pedido: int
-    metodo: str  # "efectivo" | "tarjeta_debito" | "tarjeta_credito"
+    metodo: str
+
 
 class PagoResponse(BaseModel):
     id: int
@@ -105,11 +138,14 @@ class PagoResponse(BaseModel):
     monto: Decimal
     numero_factura: str
     creado_en: datetime
+
     class Config:
         from_attributes = True
-        # AGREGAR a app/schemas/schemas_operaciones.py
 
-from datetime import date as date_type
+
+# =========================================================
+# AUDITORÍA
+# =========================================================
 
 class AuditoriaResponse(BaseModel):
     id: int
@@ -117,13 +153,18 @@ class AuditoriaResponse(BaseModel):
     accion: str
     id_sede: Optional[int]
     creado_en: datetime
+
     class Config:
         from_attributes = True
 
 
+# =========================================================
+# REPORTES
+# =========================================================
+
 class ReporteVentasItem(BaseModel):
     id_sede: int
-    fecha: date_type
+    fecha: date
     cantidad_ventas: int
     total_vendido: Decimal
 

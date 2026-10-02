@@ -123,3 +123,4 @@
 2026-10-02 15:58:32 | INFO | app | El acceso se crea: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbkBiYXJwb2xheXB1bnRvLmNvbSIsInJvbGUiOiJBZG1pbmlzdHJhZG9yIiwiZXhwIjoxNzkwOTc2NTEyfQ.dQDusXvfqMBZDXZWKA8WotaaiNKI42mUw8Nj3CtJtkI
 2026-10-02 15:59:12 | INFO | app | Se toman los datos del usuario: <app.models.models_service.Usuario object at 0x0000026A190C4650>
 2026-10-02 15:59:12 | INFO | app | El acceso se crea: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbkBiYXJwb2xheXB1bnRvLmNvbSIsInJvbGUiOiJBZG1pbmlzdHJhZG9yIiwiZXhwIjoxNzkwOTc2NTUyfQ.NFa0mEZxfizVM7mkVfJPH0aV1fV0u90rNrfmki6dTkI
+2026-10-02 16:19:47 | INFO | app | ¡El backend de Bar Pola y Punto está corriendo exitosamente!
