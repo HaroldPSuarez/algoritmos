@@ -1,19 +1,35 @@
-// src/components/RoleProtectedRoute.tsx
 import { Navigate, Outlet } from "react-router-dom";
-import { getRoleId } from "../utils/jwt";
+import { parseJwt } from "../utils/jwt";
 
-interface Props {
+interface RoleProtectedRouteProps {
   rolesPermitidos: number[];
 }
 
-export default function RoleProtectedRoute({ rolesPermitidos }: Props) {
+export default function RoleProtectedRoute({ rolesPermitidos }: RoleProtectedRouteProps) {
   const token = localStorage.getItem("token");
-  if (!token) return <Navigate to="/login" replace />;
 
-  const rol = getRoleId();
-  if (rol === null || !rolesPermitidos.includes(rol)) {
+  // Si no hay token, redirige al login
+  if (!token) {
     return <Navigate to="/login" replace />;
   }
 
+  const payload = parseJwt(token);
+  if (!payload) {
+    return <Navigate to="/login" replace />;
+  }
+
+  const userRole = Number(payload.role);
+
+  // Verificamos de forma segura que rolesPermitidos exista y sea un arreglo
+  if (!rolesPermitidos || !Array.isArray(rolesPermitidos)) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Si el rol del usuario no está autorizado, redirige al login
+  if (!rolesPermitidos.includes(userRole)) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Si todo es correcto, renderiza las rutas hijas dentro del Layout o Router
   return <Outlet />;
 }

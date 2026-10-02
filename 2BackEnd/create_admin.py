@@ -35,52 +35,69 @@ def sembrar_sede_default(db):
     return nueva_sede
 
 
-def crear_admin():
+def inicializar_base_datos():
     db = SessionLocal()
 
     try:
         sembrar_roles(db)
         sede = sembrar_sede_default(db)
 
-        rol_admin = db.query(Rol).filter(Rol.nombre == "Administrador").first()
-
-        admin_email = "admin@barpolaypunto.com"
-
-        existing_user = db.query(Usuario).filter(
-            Usuario.email == admin_email
-        ).first()
-
-        if existing_user:
-            print("El usuario administrador ya existe.")
-            return
-
-        hashed_password = get_password_hash("admin123")
-
-        nuevo_admin = Usuario(
-            nombre_completo="Administrador Principal",
-            email=admin_email,
-            hashed_password=hashed_password,
-            id_rol=rol_admin.id,
-            id_sede=sede.id,
-            estado=True
-        )
-
-        db.add(nuevo_admin)
-        db.commit()
-        db.refresh(nuevo_admin)
+        # Definir los usuarios base que queremos asegurar en el sistema
+        usuarios_por_crear = [
+            {
+                "nombre_completo": "Administrador Principal",
+                "email": "admin@barpolaypunto.com",
+                "password": "admin123",
+                "rol_nombre": "Administrador"
+            },
+            {
+                "nombre_completo": "Mesero de Prueba",
+                "email": "mesero@barpolaypunto.com",
+                "password": "mesero123",
+                "rol_nombre": "Mesero"
+            },
+            {
+                "nombre_completo": "Cajero de Prueba",
+                "email": "cajero@barpolaypunto.com",
+                "password": "cajero123",
+                "rol_nombre": "Cajero"
+            }
+        ]
 
         print("===================================")
-        print("¡ADMINISTRADOR CREADO!")
+        print("INICIALIZANDO USUARIOS Y ROLES")
         print("===================================")
-        print(f"ID: {nuevo_admin.id}")
-        print(f"Correo: {admin_email}")
-        print("Contraseña: admin123")
-        print(f"Rol: {rol_admin.nombre} (id {rol_admin.id})")
-        print(f"Sede: {sede.nombre} (id {sede.id})")
-        print("===================================")
+
+        for data in usuarios_por_crear:
+            rol = db.query(Rol).filter(Rol.nombre == data["rol_nombre"]).first()
+            existing_user = db.query(Usuario).filter(Usuario.email == data["email"]).first()
+
+            if existing_user:
+                print(f"-> El usuario {data['email']} ya existe.")
+                continue
+
+            hashed_password = get_password_hash(data["password"])
+            nuevo_usuario = Usuario(
+                nombre_completo=data["nombre_completo"],
+                email=data["email"],
+                hashed_password=hashed_password,
+                id_rol=rol.id,
+                id_sede=sede.id,
+                estado=True
+            )
+
+            db.add(nuevo_usuario)
+            db.commit()
+            db.refresh(nuevo_usuario)
+
+            print(f"✅ ¡{data['rol_nombre'].upper()} CREADO!")
+            print(f"   Correo: {data['email']}")
+            print(f"   Contraseña: {data['password']}")
+            print(f"   Rol: {rol.nombre} (ID: {rol.id})")
+            print("-----------------------------------")
 
     except Exception as e:
-        print(f"Error al crear el admin: {e}")
+        print(f"Error al sembrar la base de datos: {e}")
         db.rollback()
 
     finally:
@@ -88,4 +105,4 @@ def crear_admin():
 
 
 if __name__ == "__main__":
-    crear_admin()
+    inicializar_base_datos()

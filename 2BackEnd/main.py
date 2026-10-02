@@ -4,10 +4,11 @@ from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from typing import List
+from pydantic import BaseModel
 
 from app.config import get_db, Base, engine
 from app.services import get_user_by_email, create_user, get_sedes, create_sede, update_sede, desactivar_sede
-from app.utils import verify_password, create_access_token, logger
+from app.utils import verify_password, create_access_token, logger, get_password_hash
 from app.utils.auth_deps import get_current_user, require_role
 from app.schemas import (
     UsuarioCreate, UsuarioResponse, Token, LoginRequest, SedeCreate, SedeResponse, SedeUpdate
@@ -49,18 +50,20 @@ def read_root():
 @app.post("/auth/login", response_model=Token)
 def login(form_data: LoginRequest, db: Session = Depends(get_db)):
     user = get_user_by_email(db, email=form_data.email)
-    logger.info(f'Se toman los datos del usuario: {user}')
     if not user or not verify_password(form_data.password, user.hashed_password):
-        logger.info("No se verificó datos de usuario")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Correo o contraseña incorrectos",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    access_token = create_access_token(data={"sub": user.email, "role": user.id_rol})
-    logger.info(f'El acceso se crea: {access_token}')
+    
+    # Aseguramos que el rol viaje estrictamente como número entero (ej. 1, 2, 3)
+    rol_id = int(user.id_rol) if user.id_rol else 1
+    
+    # Creamos el token codificando el número en el payload
+    access_token = create_access_token(data={"sub": user.email, "role": rol_id})
+    
     return {"access_token": access_token, "token_type": "bearer"}
-
 
 # ==================== SEDES ====================
 @app.get("/listar_sedes", response_model=List[SedeResponse])
@@ -81,7 +84,7 @@ def editar_sede(id_sede: int, datos: SedeUpdate, db: Session = Depends(get_db),
 
 @app.delete("/sedes/{id_sede}", response_model=SedeResponse)
 def eliminar_sede(id_sede: int, db: Session = Depends(get_db),
-                   usuario: Usuario = Depends(require_role("Administrador"))):
+                    usuario: Usuario = Depends(require_role("Administrador"))):
     sede_desactivada = desactivar_sede(db, id_sede)
     if not sede_desactivada:
         raise HTTPException(status_code=404, detail="Sede no encontrada")
@@ -89,12 +92,42 @@ def eliminar_sede(id_sede: int, db: Session = Depends(get_db),
 
 
 # ==================== USUARIOS ====================
+class PasswordUpdateSchema(BaseModel):
+    password: str
+
+@app.get("/usuarios", response_model=List[UsuarioResponse])
+def listar_usuarios(db: Session = Depends(get_db), usuario: Usuario = Depends(require_role("Administrador"))):
+    """Obtiene la lista completa de usuarios registrados en el sistema."""
+    return db.query(Usuario).all()
+
 @app.post("/registrar_usuarios", response_model=UsuarioResponse)
 def registrar_usuario(user: UsuarioCreate, db: Session = Depends(get_db)):
     db_user = get_user_by_email(db, email=user.email)
     if db_user:
         raise HTTPException(status_code=400, detail="El correo ya está registrado")
     return create_user(db=db, user=user)
+
+@app.delete("/usuarios/{id_usuario}", response_model=UsuarioResponse)
+def eliminar_usuario(id_usuario: int, db: Session = Depends(get_db), usuario: Usuario = Depends(require_role("Administrador"))):
+    """Elimina un usuario del sistema por su ID."""
+    db_user = db.query(Usuario).filter(Usuario.id == id_usuario).first()
+    if not db_user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    db.delete(db_user)
+    db.commit()
+    return db_user
+
+@app.put("/usuarios/{id_usuario}/password", response_model=UsuarioResponse)
+def actualizar_password_usuario(id_usuario: int, datos: PasswordUpdateSchema, db: Session = Depends(get_db), usuario: Usuario = Depends(require_role("Administrador"))):
+    """Actualiza la contraseña de un usuario específico."""
+    db_user = db.query(Usuario).filter(Usuario.id == id_usuario).first()
+    if not db_user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    
+    db_user.hashed_password = get_password_hash(datos.password)
+    db.commit()
+    db.refresh(db_user)
+    return db_user
 
 
 # ==================== MESAS ====================
@@ -117,7 +150,7 @@ def listar_productos(db: Session = Depends(get_db),
 
 @app.post("/productos", response_model=ProductoResponse)
 def crear_producto_endpoint(producto: ProductoCreate, db: Session = Depends(get_db),
-                             usuario: Usuario = Depends(require_role("Administrador"))):
+                           usuario: Usuario = Depends(require_role("Administrador"))):
     return create_producto(db, producto)
 
 
@@ -136,7 +169,7 @@ def entrada_inventario(data: InventarioCreate, db: Session = Depends(get_db),
 # ==================== PEDIDOS ====================
 @app.post("/pedidos", response_model=PedidoResponse)
 def crear_pedido_endpoint(pedido: PedidoCreate, db: Session = Depends(get_db),
-                           usuario: Usuario = Depends(require_role("Mesero", "Administrador"))):
+                            usuario: Usuario = Depends(require_role("Mesero", "Administrador"))):
     return crear_pedido(db, pedido, usuario.id)
 
 @app.get("/pedidos/activos", response_model=List[PedidoResponse])
@@ -146,21 +179,21 @@ def listar_pedidos_activos(id_sede: int = None, db: Session = Depends(get_db),
 
 @app.put("/pedidos/{id_pedido}/cancelar", response_model=PedidoResponse)
 def cancelar_pedido_endpoint(id_pedido: int, db: Session = Depends(get_db),
-                              usuario: Usuario = Depends(require_role("Mesero", "Administrador"))):
+                            usuario: Usuario = Depends(require_role("Mesero", "Administrador"))):
     return cancelar_pedido(db, id_pedido, usuario.id)
 
 
 # ==================== PAGOS ====================
 @app.post("/pagos", response_model=PagoResponse)
 def registrar_pago_endpoint(pago: PagoCreate, db: Session = Depends(get_db),
-                             usuario: Usuario = Depends(require_role("Cajero", "Administrador"))):
+                           usuario: Usuario = Depends(require_role("Cajero", "Administrador"))):
     return registrar_pago(db, pago, usuario.id)
 
 
 # ==================== AUDITORÍA ====================
 @app.get("/auditoria", response_model=List[AuditoriaResponse])
 def listar_auditoria(id_sede: int = None, db: Session = Depends(get_db),
-                      usuario: Usuario = Depends(require_role("Administrador"))):
+                      usuario: Usuario = Depends(get_current_user)):
     return get_auditoria(db, id_sede)
 
 

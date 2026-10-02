@@ -1,431 +1,305 @@
 import { useEffect, useState } from "react";
 import api from "../api/axios";
-import "./Mesas.css";
+import "./Usuarios.css"; // Reutilizamos los estilos unificados de administración
+
+interface Sede {
+  id: number;
+  nombre: string;
+}
+
 interface Mesa {
   id: number;
   numero: number;
   capacidad: number;
-  estado: "disponible" | "ocupada";
+  estado: string;
   id_sede: number;
 }
-interface Producto {
-  id: number;
-  nombre: string;
-  precio: number;
-}
-interface CarritoItem {
-  id_producto: number;
-  cantidad: number;
-}
-export default function Mesas() {
+
+export default function GestionMesas() {
   const [mesas, setMesas] = useState<Mesa[]>([]);
-  const [productos, setProductos] = useState<Producto[]>([]);
-  const [mesaSeleccionada, setMesaSeleccionada] = useState<Mesa | null>(null);
-  const [carrito, setCarrito] = useState<CarritoItem[]>([]);
+  const [sedes, setSedes] = useState<Sede[]>([]);
+
+  // Filtro de sede para la tabla superior
+  const [filtroSede, setFiltroSede] = useState<number | "">("");
+
+  // Formulario de creación
+  const [idSedeCrear, setIdSedeCrear] = useState<number | "">("");
+  const [numeroMesa, setNumeroMesa] = useState<number | "">("");
+  const [capacidad, setCapacidad] = useState<number>(4);
+
   const [error, setError] = useState("");
+  const [exito, setExito] = useState("");
   const [loading, setLoading] = useState(false);
+
   useEffect(() => {
-    cargarMesas();
-    cargarProductos();
-  }, []);
-  const cargarMesas = async () => {
+    cargarDatos();
+  }, [filtroSede]);
+
+  const cargarDatos = async () => {
     try {
-      const res = await api.get("/mesas");
-      setMesas(res.data);
-    } catch {
-      setError("No se pudieron cargar las mesas");
+      const resSedes = await api.get("/listar_sedes");
+      setSedes(resSedes.data);
+
+      // Si hay filtro de sede, consultamos filtrado; si no, todas
+      const urlMesas = filtroSede !== "" ? `/mesas?id_sede=${filtroSede}` : "/mesas";
+      const resMesas = await api.get(urlMesas);
+      setMesas(resMesas.data);
+    } catch (err) {
+      console.error("Error al cargar mesas y sedes", err);
     }
   };
-  const cargarProductos = async () => {
-    try {
-      const res = await api.get("/productos");
-      setProductos(res.data);
-    } catch {
-      setError("No se pudieron cargar los productos");
-    }
-  };
-  const seleccionarMesa = (mesa: Mesa) => {
-    if (mesa.estado === "ocupada") return;
-    setMesaSeleccionada(mesa);
-    setCarrito([]);
+
+  const crearMesa = async (e: React.FormEvent) => {
+    e.preventDefault();
     setError("");
-  };
-  const agregarProducto = (id_producto: number) => {
-    setCarrito((prev) => {
-      const existe = prev.find((p) => p.id_producto === id_producto);
-      if (existe) {
-        return prev.map((p) =>
-          p.id_producto === id_producto
-            ? { ...p, cantidad: p.cantidad + 1 }
-            : p,
-        );
-      }
-      return [...prev, { id_producto, cantidad: 1 }];
-    });
-  };
-  const quitarProducto = (id_producto: number) => {
-    setCarrito((prev) => {
-      const producto = prev.find((p) => p.id_producto === id_producto);
-      if (!producto) return prev;
-      if (producto.cantidad === 1) {
-        return prev.filter((p) => p.id_producto !== id_producto);
-      }
-      return prev.map((p) =>
-        p.id_producto === id_producto ? { ...p, cantidad: p.cantidad - 1 } : p,
-      );
-    });
-  };
-  const eliminarProducto = (id_producto: number) => {
-    setCarrito((prev) => prev.filter((p) => p.id_producto !== id_producto));
-  };
-  const cancelarPedido = () => {
-    setMesaSeleccionada(null);
-    setCarrito([]);
-    setError("");
-  };
-  const enviarPedido = async () => {
-    if (!mesaSeleccionada || carrito.length === 0) {
+    setExito("");
+
+    if (idSedeCrear === "") {
+      setError("Por favor selecciona una sede para la nueva mesa.");
       return;
     }
-    setError("");
+
+    if (typeof numeroMesa !== "number" || numeroMesa <= 0) {
+      setError("El número de la mesa debe ser un valor positivo mayor a 0.");
+      return;
+    }
+
+    if (capacidad <= 0) {
+      setError("La capacidad de la mesa debe ser mayor a 0.");
+      return;
+    }
+
     setLoading(true);
     try {
-      await api.post("/pedidos", {
-        id_mesa: mesaSeleccionada.id,
-        id_sede: mesaSeleccionada.id_sede,
-        detalles: carrito,
+      await api.post("/mesas", {
+        numero: Number(numeroMesa),
+        capacidad: Number(capacidad),
+        id_sede: Number(idSedeCrear),
+        estado: "disponible"
       });
-      setCarrito([]);
-      setMesaSeleccionada(null);
-      await cargarMesas();
+
+      setExito(`¡Mesa #${numeroMesa} creada exitosamente!`);
+      setNumeroMesa("");
+      setCapacidad(4);
+      cargarDatos();
     } catch (err: any) {
-      setError(err?.response?.data?.detail || "Error al crear el pedido");
+      setError(err?.response?.data?.detail || "Error al crear la mesa");
     } finally {
       setLoading(false);
     }
   };
-  const obtenerProducto = (id: number) => productos.find((p) => p.id === id);
-  const calcularTotal = () => {
-    return carrito.reduce((total, item) => {
-      const producto = obtenerProducto(item.id_producto);
-      if (!producto) return total;
-      return total + producto.precio * item.cantidad;
-    }, 0);
+
+  const eliminarMesa = async (id: number, numero: number) => {
+    if (!window.confirm(`¿Estás seguro de eliminar la Mesa #${numero}?`)) return;
+
+    try {
+      await api.delete(`/mesas/${id}`);
+      setMesas(mesas.filter((m) => m.id !== id));
+      setExito(`Mesa #${numero} eliminada correctamente.`);
+    } catch (err: any) {
+      alert(err?.response?.data?.detail || "No se puede eliminar la mesa porque tiene pedidos asociados.");
+    }
   };
-  const formatearPrecio = (precio: number) => {
-    return new Intl.NumberFormat("es-CO", {
-      style: "currency",
-      currency: "COP",
-      maximumFractionDigits: 0,
-    }).format(precio);
+
+  const nombreSede = (idSedeVal: number) => {
+    return sedes.find((s) => s.id === idSedeVal)?.nombre || "Sede Principal";
   };
-  const mesasDisponibles = mesas.filter(
-    (mesa) => mesa.estado === "disponible",
-  ).length;
-  const mesasOcupadas = mesas.filter(
-    (mesa) => mesa.estado === "ocupada",
-  ).length;
+
   return (
-    <div className="mesas-page">
-      {" "}
-      {/* ===================================================== HEADER ===================================================== */}{" "}
-      <div className="mesas-header">
-        {" "}
+    <div className="usuarios-page">
+      {/* ENCABEZADO */}
+      <div className="usuarios-header">
         <div>
-          {" "}
-          <span className="mesas-eyebrow"> OPERACIÓN </span> <h1>Mesas</h1>{" "}
-          <p> Gestiona las mesas y crea pedidos. </p>{" "}
-        </div>{" "}
-        <div className="mesas-resumen">
-          {" "}
-          <div className="resumen-item">
-            {" "}
-            <span className="resumen-dot disponible"></span>{" "}
-            <div>
-              {" "}
-              <strong>{mesasDisponibles}</strong>{" "}
-              <small>Disponibles</small>{" "}
-            </div>{" "}
-          </div>{" "}
-          <div className="resumen-divider"></div>{" "}
-          <div className="resumen-item">
-            {" "}
-            <span className="resumen-dot ocupada"></span>{" "}
-            <div>
-              {" "}
-              <strong>{mesasOcupadas}</strong> <small>Ocupadas</small>{" "}
-            </div>{" "}
-          </div>{" "}
-        </div>{" "}
-      </div>{" "}
-      {/* ===================================================== MESAS ===================================================== */}{" "}
-      <section className="mesas-card">
-        {" "}
-        <div className="mesas-section-header">
-          {" "}
+          <span className="usuarios-eyebrow">ADMINISTRACIÓN</span>
+          <h1>Gestión de Mesas</h1>
+          <p>Configura las mesas, capacidad y su disponibilidad por sede.</p>
+        </div>
+
+        <div className="usuarios-counter">
+          <span>{mesas.length}</span>
+          <small>Mesas en vista</small>
+        </div>
+      </div>
+
+      {error && (
+        <div className="usuario-error form-full" style={{ marginBottom: "20px" }}>
+          <span>⚠️</span> {error}
+        </div>
+      )}
+      {exito && (
+        <div style={{ backgroundColor: "rgba(16, 185, 129, 0.15)", color: "#34d399", border: "1px solid rgba(16, 185, 129, 0.3)", padding: "12px", borderRadius: "8px", marginBottom: "20px" }}>
+          ✅ {exito}
+        </div>
+      )}
+
+      {/* FILTRAR POR SEDE */}
+      <div style={{ marginBottom: "20px", display: "flex", gap: "10px", alignItems: "center", background: "#1f2937", padding: "15px", borderRadius: "8px", border: "1px solid #374151" }}>
+        <label style={{ color: "#9ca3af", fontSize: "14px", fontWeight: "500" }}>Filtrar listado por Sede:</label>
+        <select
+          value={filtroSede}
+          onChange={(e) => setFiltroSede(e.target.value === "" ? "" : Number(e.target.value))}
+          style={{ background: "#111827", border: "1px solid #374151", color: "#fff", padding: "8px 12px", borderRadius: "6px", outline: "none" }}
+        >
+          <option value="">Todas las sedes</option>
+          {sedes.map((s) => (
+            <option key={s.id} value={s.id}>{s.nombre}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* TABLA DE MESAS */}
+      <section className="usuarios-card">
+        <div className="section-header">
           <div>
-            {" "}
-            <h2>Estado de las mesas</h2>{" "}
-            <p> Selecciona una mesa disponible para crear un pedido. </p>{" "}
-          </div>{" "}
-          <div className="mesas-leyenda">
-            {" "}
-            <span>
-              {" "}
-              <i className="leyenda-disponible"></i> Disponible{" "}
-            </span>{" "}
-            <span>
-              {" "}
-              <i className="leyenda-ocupada"></i> Ocupada{" "}
-            </span>{" "}
-          </div>{" "}
-        </div>{" "}
-        <div className="mesas-grid">
-          {" "}
-          {mesas.map((mesa) => {
-            const seleccionada = mesaSeleccionada?.id === mesa.id;
-            return (
-              <button
-                key={mesa.id}
-                type="button"
-                className={`mesa-card ${mesa.estado === "ocupada" ? "mesa-ocupada" : "mesa-disponible"} ${seleccionada ? "mesa-seleccionada" : ""}`}
-                onClick={() => seleccionarMesa(mesa)}
-                disabled={mesa.estado === "ocupada"}
-              >
-                {" "}
-                <div className="mesa-card-top">
-                  {" "}
-                  <span className="mesa-status">
-                    {" "}
-                    {mesa.estado === "ocupada" ? "OCUPADA" : "DISPONIBLE"}{" "}
-                  </span>{" "}
-                  <span className="mesa-number"> #{mesa.numero} </span>{" "}
-                </div>{" "}
-                <div className="mesa-icon">
-                  {" "}
-                  {mesa.estado === "ocupada" ? "●" : "○"}{" "}
-                </div>{" "}
-                <div className="mesa-info">
-                  {" "}
-                  <strong> Mesa {mesa.numero} </strong>{" "}
-                  <span>
-                    {" "}
-                    {mesa.capacidad}{" "}
-                    {mesa.capacidad === 1 ? "persona" : "personas"}{" "}
-                  </span>{" "}
-                </div>{" "}
-              </button>
-            );
-          })}{" "}
-        </div>{" "}
-        {mesas.length === 0 && (
-          <div className="mesas-empty">
-            {" "}
-            <div className="empty-icon"> ○ </div>{" "}
-            <h3> No hay mesas registradas </h3>{" "}
-            <p> Cuando se creen mesas aparecerán aquí. </p>{" "}
+            <h2>Mesas registradas</h2>
+            <p>Distribución de mesas por sucursal</p>
           </div>
-        )}{" "}
-      </section>{" "}
-      {/* ===================================================== PEDIDO ===================================================== */}{" "}
-      {mesaSeleccionada && (
-        <section className="pedido-card">
-          {" "}
-          <div className="pedido-header">
-            {" "}
-            <div>
-              {" "}
-              <span className="section-label"> NUEVO PEDIDO </span>{" "}
-              <h2> Mesa {mesaSeleccionada.numero} </h2>{" "}
-              <p>
-                {" "}
-                {mesaSeleccionada.capacidad}{" "}
-                {mesaSeleccionada.capacidad === 1 ? "persona" : "personas"} ·
-                Selecciona los productos{" "}
-              </p>{" "}
-            </div>{" "}
-            <button
-              type="button"
-              className="cerrar-pedido"
-              onClick={cancelarPedido}
+        </div>
+
+        {mesas.length > 0 ? (
+          <div className="usuarios-table-wrapper">
+            <table className="usuarios-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Número de Mesa</th>
+                  <th>Capacidad</th>
+                  <th>Sede</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {mesas.map((m) => (
+                  <tr key={m.id}>
+                    <td className="usuario-id">#{m.id}</td>
+                    <td>
+                      <div className="usuario-info">
+                        <div className="usuario-avatar" style={{ background: "#d97706", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          🪑
+                        </div>
+                        <span>Mesa #{m.numero}</span>
+                      </div>
+                    </td>
+                    <td>👥 {m.capacidad} personas</td>
+                    <td>{nombreSede(m.id_sede)}</td>
+                    <td>
+                      <span className={m.estado === "disponible" ? "estado-badge estado-activo" : "estado-badge estado-inactivo"}>
+                        <span className="estado-dot"></span>
+                        {m.estado}
+                      </span>
+                    </td>
+                    <td>
+                      <button
+                        onClick={() => eliminarMesa(m.id, m.numero)}
+                        style={{
+                          backgroundColor: "#ef4444",
+                          color: "#fff",
+                          border: "none",
+                          padding: "6px 12px",
+                          borderRadius: "4px",
+                          cursor: "pointer",
+                          fontWeight: "bold",
+                          fontSize: "12px"
+                        }}
+                      >
+                        Eliminar
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="usuarios-empty">
+            <div className="empty-icon">🪑</div>
+            <h3>No hay mesas registradas</h3>
+            <p>Crea la primera mesa utilizando el formulario de abajo.</p>
+          </div>
+        )}
+      </section>
+
+      {/* FORMULARIO DE NUEVA MESA */}
+      <section className="nuevo-usuario-card">
+        <div className="section-header">
+          <div>
+            <span className="section-label">NUEVO REGISTRO</span>
+            <h2>Crear mesa</h2>
+            <p>Añade una nueva mesa indicando su sede, número y capacidad.</p>
+          </div>
+        </div>
+
+        <form onSubmit={crearMesa} className="usuario-form">
+          {/* SEDE */}
+          <div className="form-group">
+            <label htmlFor="sede">Sede</label>
+            <select
+              id="sede"
+              value={idSedeCrear}
+              onChange={(e) => setIdSedeCrear(e.target.value === "" ? "" : Number(e.target.value))}
+              required
             >
-              {" "}
-              ×{" "}
-            </button>{" "}
-          </div>{" "}
-          <div className="pedido-layout">
-            {" "}
-            {/* PRODUCTOS */}{" "}
-            <div className="productos-pedido">
-              {" "}
-              <div className="pedido-subheader">
-                {" "}
-                <h3>Productos</h3>{" "}
-                <span> {productos.length} disponibles </span>{" "}
-              </div>{" "}
-              <div className="productos-pedido-grid">
-                {" "}
-                {productos.map((producto) => {
-                  const cantidad =
-                    carrito.find((item) => item.id_producto === producto.id)
-                      ?.cantidad || 0;
-                  return (
-                    <button
-                      key={producto.id}
-                      type="button"
-                      className="producto-pedido-card"
-                      onClick={() => agregarProducto(producto.id)}
-                    >
-                      {" "}
-                      <div className="producto-pedido-icon">
-                        {" "}
-                        {producto.nombre.charAt(0).toUpperCase()}{" "}
-                      </div>{" "}
-                      <div className="producto-pedido-info">
-                        {" "}
-                        <strong> {producto.nombre} </strong>{" "}
-                        <span> {formatearPrecio(producto.precio)} </span>{" "}
-                      </div>{" "}
-                      {cantidad > 0 && (
-                        <span className="producto-cantidad"> {cantidad} </span>
-                      )}{" "}
-                      <span className="producto-add"> + </span>{" "}
-                    </button>
-                  );
-                })}{" "}
-              </div>{" "}
-            </div>{" "}
-            {/* CARRITO */}{" "}
-            <aside className="carrito">
-              {" "}
-              <div className="carrito-header">
-                {" "}
-                <div>
-                  {" "}
-                  <h3>Pedido</h3>{" "}
-                  <span>
-                    {" "}
-                    {carrito.reduce(
-                      (total, item) => total + item.cantidad,
-                      0,
-                    )}{" "}
-                    productos{" "}
-                  </span>{" "}
-                </div>{" "}
-                {carrito.length > 0 && (
-                  <button
-                    type="button"
-                    className="limpiar-carrito"
-                    onClick={() => setCarrito([])}
-                  >
-                    {" "}
-                    Limpiar{" "}
-                  </button>
-                )}{" "}
-              </div>{" "}
-              {carrito.length === 0 ? (
-                <div className="carrito-vacio">
-                  {" "}
-                  <div className="carrito-vacio-icon"> + </div>{" "}
-                  <strong> Pedido vacío </strong>{" "}
-                  <span>
-                    {" "}
-                    Selecciona productos para agregarlos al pedido.{" "}
-                  </span>{" "}
-                </div>
+              <option value="">Selecciona una sede</option>
+              {sedes.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.nombre}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* NÚMERO DE MESA */}
+          <div className="form-group">
+            <label htmlFor="numero">Número de Mesa</label>
+            <input
+              id="numero"
+              type="number"
+              min="1"
+              placeholder="Ej. 1, 2, 5..."
+              value={numeroMesa}
+              onChange={(e) => setNumeroMesa(e.target.value === "" ? "" : Number(e.target.value))}
+              required
+            />
+          </div>
+
+          {/* CAPACIDAD */}
+          <div className="form-group">
+            <label htmlFor="capacidad">Capacidad (Personas)</label>
+            <input
+              id="capacidad"
+              type="number"
+              min="1"
+              max="20"
+              placeholder="Ej. 4"
+              value={capacidad}
+              onChange={(e) => setCapacidad(Number(e.target.value))}
+              required
+            />
+          </div>
+
+          {/* BOTÓN */}
+          <div className="form-actions form-full">
+            <button
+              type="submit"
+              disabled={loading}
+              className="crear-usuario-btn"
+            >
+              {loading ? (
+                <>
+                  <span className="button-spinner"></span>
+                  Creando...
+                </>
               ) : (
                 <>
-                  {" "}
-                  <div className="carrito-items">
-                    {" "}
-                    {carrito.map((item) => {
-                      const producto = obtenerProducto(item.id_producto);
-                      if (!producto) return null;
-                      return (
-                        <div key={item.id_producto} className="carrito-item">
-                          {" "}
-                          <div className="carrito-item-info">
-                            {" "}
-                            <strong> {producto.nombre} </strong>{" "}
-                            <span>
-                              {" "}
-                              {formatearPrecio(
-                                producto.precio * item.cantidad,
-                              )}{" "}
-                            </span>{" "}
-                          </div>{" "}
-                          <div className="cantidad-control">
-                            {" "}
-                            <button
-                              type="button"
-                              onClick={() => quitarProducto(item.id_producto)}
-                            >
-                              {" "}
-                              −{" "}
-                            </button>{" "}
-                            <span> {item.cantidad} </span>{" "}
-                            <button
-                              type="button"
-                              onClick={() => agregarProducto(item.id_producto)}
-                            >
-                              {" "}
-                              +{" "}
-                            </button>{" "}
-                          </div>{" "}
-                          <button
-                            type="button"
-                            className="eliminar-item"
-                            onClick={() => eliminarProducto(item.id_producto)}
-                          >
-                            {" "}
-                            ×{" "}
-                          </button>{" "}
-                        </div>
-                      );
-                    })}{" "}
-                  </div>{" "}
-                  <div className="carrito-total">
-                    {" "}
-                    <span>Total</span>{" "}
-                    <strong> {formatearPrecio(calcularTotal())} </strong>{" "}
-                  </div>{" "}
-                  {error && (
-                    <div className="pedido-error">
-                      {" "}
-                      <span>!</span> {error}{" "}
-                    </div>
-                  )}{" "}
-                  <button
-                    type="button"
-                    className="confirmar-pedido"
-                    onClick={enviarPedido}
-                    disabled={loading}
-                  >
-                    {" "}
-                    {loading ? (
-                      <>
-                        {" "}
-                        <span className="button-spinner"></span> Creando
-                        pedido...{" "}
-                      </>
-                    ) : (
-                      <> Confirmar pedido </>
-                    )}{" "}
-                  </button>{" "}
-                  <button
-                    type="button"
-                    className="cancelar-pedido"
-                    onClick={cancelarPedido}
-                  >
-                    {" "}
-                    Cancelar{" "}
-                  </button>{" "}
+                  <span>+</span>
+                  Crear mesa
                 </>
-              )}{" "}
-            </aside>{" "}
-          </div>{" "}
-        </section>
-      )}{" "}
+              )}
+            </button>
+          </div>
+        </form>
+      </section>
     </div>
   );
 }

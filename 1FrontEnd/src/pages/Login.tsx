@@ -1,47 +1,113 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import api from '../api/axios';
-import { parseJwt, ROL_ADMINISTRADOR, ROL_MESERO, ROL_CAJERO } from '../utils/jwt';
-import './Login.css';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+
+import api from "../api/axios";
+
+import {
+  parseJwt,
+  ROL_ADMINISTRADOR,
+  ROL_MESERO,
+  ROL_CAJERO,
+} from "../utils/jwt";
+
+import "./Login.css";
 
 export default function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
 
-  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleLogin = async (
+    e: React.FormEvent<HTMLFormElement>
+  ) => {
     e.preventDefault();
 
-    setError('');
+    setError("");
     setLoading(true);
 
     try {
-      const response = await api.post('/auth/login', {
+      // 1. Enviar correo y contraseña al backend
+      const response = await api.post("/auth/login", {
         email,
         password,
       });
 
-      const token = response.data.access_token;
-      localStorage.setItem('token', token);
+      console.log(
+        "Respuesta completa del backend:",
+        response.data
+      );
 
-      const payload = parseJwt(token);
-      const rol = payload?.role;
+      // 2. Obtener el token
+      const token =
+        response.data.access_token ||
+        response.data.token;
 
-      if (rol === ROL_ADMINISTRADOR) {
-        navigate('/admin');
-      } else if (rol === ROL_MESERO) {
-        navigate('/mesas');
-      } else if (rol === ROL_CAJERO) {
-        navigate('/caja');
-      } else {
-        navigate('/login');
+      if (!token) {
+        throw new Error(
+          "El backend no devolvió ningún token válido."
+        );
       }
 
-    } catch (err) {
-      setError('Correo o contraseña incorrectos');
+      console.log("Token recibido:", token);
+
+      // 3. Guardar token
+      localStorage.setItem("token", token);
+
+      // 4. Leer información del JWT
+      const payload = parseJwt(token);
+
+      console.log("Payload del JWT:", payload);
+
+      if (!payload) {
+        throw new Error(
+          "No se pudo leer la información del token."
+        );
+      }
+
+      // 5. Obtener ID del rol estrictamente como número entero
+      const rol = Number(payload.role);
+
+      console.log("ID del rol numérico:", rol);
+
+      if (isNaN(rol)) {
+        throw new Error("El rol obtenido del token no es un número válido.");
+      }
+
+      // 6. Redireccionar dependiendo del rol numérico
+      if (rol === ROL_ADMINISTRADOR) {
+        console.log("Usuario administrador");
+        navigate("/admin");
+      } else if (rol === ROL_MESERO) {
+        console.log("Usuario mesero");
+        navigate("/mesas");
+      } else if (rol === ROL_CAJERO) {
+        console.log("Usuario cajero");
+        navigate("/caja");
+      } else {
+        console.warn(
+          "ID de rol numérico desconocido:",
+          rol
+        );
+
+        setError(
+          `Rol desconocido: ${rol}`
+        );
+      }
+    } catch (err: any) {
+      console.error(
+        "Error en el login:",
+        err
+      );
+
+      setError(
+        err?.response?.data?.detail ||
+          err?.message ||
+          "Correo o contraseña incorrectos"
+      );
     } finally {
       setLoading(false);
     }
@@ -49,6 +115,7 @@ export default function Login() {
 
   return (
     <div className="login-page">
+
       <div className="login-card">
 
         <div
@@ -103,6 +170,7 @@ export default function Login() {
             className="login-error"
             role="alert"
           >
+
             <svg
               className="login-error__icon"
               viewBox="0 0 20 20"
@@ -110,6 +178,7 @@ export default function Login() {
               xmlns="http://www.w3.org/2000/svg"
               aria-hidden="true"
             >
+
               <circle
                 cx="10"
                 cy="10"
@@ -131,11 +200,13 @@ export default function Login() {
                 r="0.9"
                 fill="currentColor"
               />
+
             </svg>
 
             <span>
               {error}
             </span>
+
           </div>
         )}
 
@@ -145,6 +216,7 @@ export default function Login() {
         >
 
           <div className="login-field">
+
             <label htmlFor="email">
               Correo electrónico
             </label>
@@ -153,14 +225,18 @@ export default function Login() {
               id="email"
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) =>
+                setEmail(e.target.value)
+              }
               required
               autoComplete="email"
               placeholder="tucorreo@barpolaypunto.com"
             />
+
           </div>
 
           <div className="login-field">
+
             <label htmlFor="password">
               Contraseña
             </label>
@@ -169,11 +245,14 @@ export default function Login() {
               id="password"
               type="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) =>
+                setPassword(e.target.value)
+              }
               required
               autoComplete="current-password"
               placeholder="••••••••"
             />
+
           </div>
 
           <button
@@ -181,6 +260,7 @@ export default function Login() {
             className="login-button"
             disabled={loading}
           >
+
             {loading ? (
               <>
                 <span
@@ -191,13 +271,15 @@ export default function Login() {
                 Entrando…
               </>
             ) : (
-              'Entrar'
+              "Entrar"
             )}
+
           </button>
 
         </form>
 
       </div>
+
     </div>
   );
 }
