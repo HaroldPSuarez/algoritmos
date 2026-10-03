@@ -1,8 +1,6 @@
-
 import uvicorn
-
 from datetime import date
-from typing import List, Optional
+from typing import List
 
 from fastapi import (
     FastAPI,
@@ -57,8 +55,8 @@ from app.schemas.schemas_operaciones import (
     ProductoResponse,
     InventarioCreate,
     InventarioResponse,
-    PedidoCreate,
     InventarioUpdate,
+    PedidoCreate,
     PedidoResponse,
     PagoCreate,
     PagoResponse,
@@ -86,28 +84,23 @@ from app.services.services_operaciones import (
 )
 
 from app.models.models_service import Usuario
-
 from app.models.models_operaciones import (
-    MovimientoInventario,
     Producto,
-    Inventario
+    Inventario,
+    MovimientoInventario,
+    Pedido,
+    DetallePedido,
+    Mesa
 )
 
-
-# =========================================================
-# CONFIGURACIÓN
-# =========================================================
 
 app = FastAPI(
     title="Sistema de Gestión Integral - Bar Pola y Punto"
 )
 
+
 Base.metadata.create_all(bind=engine)
 
-
-# =========================================================
-# CORS
-# =========================================================
 
 app.add_middleware(
     CORSMiddleware,
@@ -127,7 +120,8 @@ app.add_middleware(
 @app.get("/")
 def inicio():
     return {
-        "mensaje": "Backend Bar Pola y Punto funcionando correctamente"
+        "mensaje":
+        "Backend Bar Pola y Punto funcionando correctamente"
     }
 
 
@@ -143,6 +137,7 @@ def login(
     datos: LoginRequest,
     db: Session = Depends(get_db)
 ):
+
     user = get_user_by_email(
         db,
         datos.email
@@ -198,7 +193,9 @@ def login(
 )
 def listar_sedes(
     db: Session = Depends(get_db),
-    usuario: Usuario = Depends(get_current_user)
+    usuario: Usuario = Depends(
+        get_current_user
+    )
 ):
     return get_sedes(db)
 
@@ -214,10 +211,7 @@ def crear_sede_endpoint(
         require_role("Administrador")
     )
 ):
-    return create_sede(
-        db,
-        sede
-    )
+    return create_sede(db, sede)
 
 
 @app.put(
@@ -298,6 +292,7 @@ def eliminar_usuario_endpoint(
         require_role("Administrador")
     )
 ):
+
     usuario_db = (
         db.query(Usuario)
         .filter(
@@ -331,6 +326,7 @@ def cambiar_password(
         require_role("Administrador")
     )
 ):
+
     usuario_db = (
         db.query(Usuario)
         .filter(
@@ -352,7 +348,8 @@ def cambiar_password(
     db.commit()
 
     return {
-        "mensaje": "Contraseña actualizada correctamente"
+        "mensaje":
+        "Contraseña actualizada correctamente"
     }
 
 
@@ -365,9 +362,11 @@ def cambiar_password(
     response_model=List[MesaResponse]
 )
 def listar_mesas(
-    id_sede: Optional[int] = None,
+    id_sede: int = None,
     db: Session = Depends(get_db),
-    usuario: Usuario = Depends(get_current_user)
+    usuario: Usuario = Depends(
+        get_current_user
+    )
 ):
     return get_mesas(
         db,
@@ -438,7 +437,9 @@ def eliminar_mesa_endpoint(
 )
 def listar_productos(
     db: Session = Depends(get_db),
-    usuario: Usuario = Depends(get_current_user)
+    usuario: Usuario = Depends(
+        get_current_user
+    )
 ):
     return get_productos(db)
 
@@ -472,6 +473,7 @@ def actualizar_producto_endpoint(
         require_role("Administrador")
     )
 ):
+
     producto_db = (
         db.query(Producto)
         .filter(
@@ -507,6 +509,7 @@ def eliminar_producto_endpoint(
         require_role("Administrador")
     )
 ):
+
     producto_db = (
         db.query(Producto)
         .filter(
@@ -580,26 +583,18 @@ def actualizar_inventario_endpoint(
         require_role("Administrador")
     )
 ):
-    item_db = (
-        db.query(Inventario)
-        .filter(
-            Inventario.id == id_inventario
-        )
-        .first()
-    )
-
+    item_db = db.query(Inventario).filter(Inventario.id == id_inventario).first()
     if not item_db:
         raise HTTPException(
             status_code=404,
             detail="Registro de inventario no encontrado"
         )
-
+    
     item_db.cantidad = data.cantidad
     item_db.stock_minimo = data.stock_minimo
-
+    
     db.commit()
     db.refresh(item_db)
-
     return item_db
 
 
@@ -614,37 +609,16 @@ def eliminar_inventario_endpoint(
         require_role("Administrador")
     )
 ):
-    item_db = (
-        db.query(Inventario)
-        .filter(
-            Inventario.id == id_inventario
-        )
-        .first()
-    )
-
+    item_db = db.query(Inventario).filter(Inventario.id == id_inventario).first()
     if not item_db:
         raise HTTPException(
             status_code=404,
             detail="Registro de inventario no encontrado"
         )
-
-    # Eliminar movimientos asociados
-    # para evitar conflictos de llave foránea
-    (
-        db.query(MovimientoInventario)
-        .filter(
-            MovimientoInventario.id_inventario == id_inventario
-        )
-        .delete(
-            synchronize_session=False
-        )
-    )
-
-    # Eliminar el registro de inventario
+    
+    db.query(MovimientoInventario).filter(MovimientoInventario.id_inventario == id_inventario).delete()
     db.delete(item_db)
-
     db.commit()
-
     return item_db
 
 
@@ -673,14 +647,107 @@ def crear_pedido_endpoint(
     )
 
 
+@app.post(
+    "/mesas/{id_mesa}/detalles-pedido",
+    response_model=PedidoResponse
+)
+def agregar_detalles_por_mesa_endpoint(
+    id_mesa: int,
+    detalles: List[dict],
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(
+        require_role("Mesero", "Administrador")
+    )
+):
+    pedido_db = db.query(Pedido).filter(
+        Pedido.id_mesa == id_mesa, 
+        Pedido.estado == "activo"
+    ).first()
+    
+    if not pedido_db:
+        raise HTTPException(status_code=404, detail="No hay ningún pedido activo para esta mesa")
+
+    for det in detalles:
+        id_prod = det.get("id_producto")
+        cant = det.get("cantidad")
+
+        producto_db = db.query(Producto).filter(Producto.id == id_prod).first()
+        if not producto_db:
+            raise HTTPException(status_code=404, detail=f"Producto #{id_prod} no encontrado")
+
+        inventario_db = db.query(Inventario).filter(
+            Inventario.id_producto == id_prod,
+            Inventario.id_sede == pedido_db.id_sede
+        ).first()
+
+        if not inventario_db or inventario_db.cantidad < cant:
+            raise HTTPException(status_code=400, detail=f"Stock insuficiente para {producto_db.nombre}")
+
+        inventario_db.cantidad -= cant
+
+        nuevo_detalle = DetallePedido(
+            id_pedido=pedido_db.id,
+            id_producto=id_prod,
+            cantidad=cant,
+            precio_unitario=producto_db.precio
+        )
+        db.add(nuevo_detalle)
+        
+        pedido_db.total = float(pedido_db.total) + (float(producto_db.precio) * cant)
+
+    db.commit()
+    db.refresh(pedido_db)
+    return pedido_db
+
+
+@app.delete(
+    "/pedidos/detalles/{id_detalle}",
+    response_model=PedidoResponse
+)
+def eliminar_detalle_pedido_endpoint(
+    id_detalle: int,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(
+        require_role("Mesero", "Administrador")
+    )
+):
+    detalle_db = db.query(DetallePedido).filter(DetallePedido.id == id_detalle).first()
+    if not detalle_db:
+        raise HTTPException(status_code=404, detail="Detalle de pedido no encontrado")
+
+    pedido_db = db.query(Pedido).filter(Pedido.id == detalle_db.id_pedido, Pedido.estado == "activo").first()
+    if not pedido_db:
+        raise HTTPException(status_code=404, detail="Pedido activo no encontrado")
+
+    inventario_db = db.query(Inventario).filter(
+        Inventario.id_producto == detalle_db.id_producto,
+        Inventario.id_sede == pedido_db.id_sede
+    ).first()
+
+    if inventario_db:
+        inventario_db.cantidad += detalle_db.cantidad
+
+    subtotal_item = float(detalle_db.precio_unitario) * detalle_db.cantidad
+    pedido_db.total = float(pedido_db.total) - subtotal_item
+    if pedido_db.total < 0:
+        pedido_db.total = 0.0
+
+    db.delete(detalle_db)
+    db.commit()
+    db.refresh(pedido_db)
+    return pedido_db
+
+
 @app.get(
     "/pedidos/activos",
     response_model=List[PedidoResponse]
 )
 def listar_pedidos_activos(
-    id_sede: Optional[int] = None,
+    id_sede: int = None,
     db: Session = Depends(get_db),
-    usuario: Usuario = Depends(get_current_user)
+    usuario: Usuario = Depends(
+        get_current_user
+    )
 ):
     return get_pedidos_activos(
         db,
@@ -743,10 +810,12 @@ def registrar_pago_endpoint(
     response_model=List[AuditoriaResponse]
 )
 def listar_auditoria(
-    id_sede: Optional[int] = None,
+    id_sede: int = None,
     limit: int = 100,
     db: Session = Depends(get_db),
-    usuario: Usuario = Depends(get_current_user)
+    usuario: Usuario = Depends(
+        get_current_user
+    )
 ):
     return get_auditoria(
         db,
@@ -764,9 +833,9 @@ def listar_auditoria(
     response_model=List[ReporteVentasItem]
 )
 def reporte_ventas_endpoint(
-    id_sede: Optional[int] = None,
-    fecha_inicio: Optional[date] = None,
-    fecha_fin: Optional[date] = None,
+    id_sede: int = None,
+    fecha_inicio: date = None,
+    fecha_fin: date = None,
     db: Session = Depends(get_db),
     usuario: Usuario = Depends(
         require_role("Administrador")
@@ -785,7 +854,7 @@ def reporte_ventas_endpoint(
     response_model=List[ReporteInventarioItem]
 )
 def reporte_inventario_endpoint(
-    id_sede: Optional[int] = None,
+    id_sede: int = None,
     db: Session = Depends(get_db),
     usuario: Usuario = Depends(
         require_role("Administrador")
@@ -802,6 +871,7 @@ def reporte_inventario_endpoint(
 # =========================================================
 
 if __name__ == "__main__":
+
     uvicorn.run(
         "main:app",
         host="127.0.0.1",
