@@ -36,3 +36,22 @@ def desactivar_sede(db: Session, id_sede: int):
     db.commit()
     db.refresh(db_sede)
     return db_sede
+
+
+def activar_sede(
+    db: Session,
+    id_sede: int
+):
+    sede = db.query(Sede).filter(
+        Sede.id == id_sede
+    ).first()
+
+    if not sede:
+        return "Sede no encontrada"
+
+    sede.estado = True
+
+    db.commit()
+    db.refresh(sede)
+
+    return sede

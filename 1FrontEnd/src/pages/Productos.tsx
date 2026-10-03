@@ -11,15 +11,17 @@ interface Producto {
 }
 
 const CATEGORIAS_VALIDAS = [
-  "Bebida con alcohol",
-  "Gaseosa",
-  "Comida"
+  "Licores y Destilados",
+  "Coctelería",
+  "Cervezas",
+  "Vinos y Espumosos",
+  "Bebidas Sin Alcohol"
 ];
 
 export default function Productos() {
   const [productos, setProductos] = useState<Producto[]>([]);
   const [nombre, setNombre] = useState("");
-  const [categoria, setCategoria] = useState("Bebida con alcohol");
+  const [categoria, setCategoria] = useState("Bebidas Sin Alcohol");
   const [precio, setPrecio] = useState("");
   
   const [editandoId, setEditandoId] = useState<number | null>(null);
@@ -86,7 +88,7 @@ export default function Productos() {
   const iniciarEdicion = (p: Producto) => {
     setEditandoId(p.id);
     setNombre(p.nombre);
-    setCategoria(p.categoria || "Bebida con alcohol");
+    setCategoria(p.categoria || "Bebidas Sin Alcohol");
     setPrecio(p.precio.toString());
     setError("");
     setExito("");

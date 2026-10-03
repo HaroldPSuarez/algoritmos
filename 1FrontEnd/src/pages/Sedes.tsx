@@ -89,6 +89,21 @@ export default function Sedes() {
     }
   };
 
+  const activarSede = async (id: number) => {
+    if (!confirm("¿Activar esta sede?")) return;
+
+    setError("");
+
+    try {
+      await api.put(`/sedes/${id}/activar`);
+      cargarSedes();
+    } catch (err: any) {
+      setError(
+        err?.response?.data?.detail || "Error al activar la sede"
+      );
+    }
+};
+
   const columns: Column<Sede>[] = [
     {
       header: "Nombre",
@@ -130,14 +145,46 @@ export default function Sedes() {
       render: (sede) =>
         editandoId === sede.id ? (
           <div className="actions">
-            <Button size="sm" onClick={() => guardarEdicion(sede.id)}>Guardar</Button>
-            <Button size="sm" variant="ghost" onClick={() => setEditandoId(null)}>Cancelar</Button>
+            <Button
+              size="sm"
+              onClick={() => guardarEdicion(sede.id)}
+            >
+              Guardar
+            </Button>
+
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setEditandoId(null)}
+            >
+              Cancelar
+            </Button>
           </div>
         ) : (
           <div className="actions">
-            <Button size="sm" variant="secondary" onClick={() => empezarEdicion(sede)}>Editar</Button>
-            {sede.estado && (
-              <Button size="sm" variant="danger" onClick={() => desactivarSede(sede.id)}>Desactivar</Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => empezarEdicion(sede)}
+            >
+              Editar
+            </Button>
+
+            {sede.estado ? (
+              <Button
+                size="sm"
+                variant="danger"
+                onClick={() => desactivarSede(sede.id)}
+              >
+                Desactivar
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                onClick={() => activarSede(sede.id)}
+              >
+                Activar
+              </Button>
             )}
           </div>
         ),

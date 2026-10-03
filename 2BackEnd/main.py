@@ -26,7 +26,8 @@ from app.services import (
     get_sedes,
     create_sede,
     update_sede,
-    desactivar_sede
+    desactivar_sede,    
+    activar_sede
 )
 
 from app.utils import (
@@ -254,6 +255,23 @@ def eliminar_sede_endpoint(
         db,
         id_sede
     )
+
+@app.put(
+    "/sedes/{id_sede}/activar",
+    response_model=SedeResponse
+)
+def activar_sede_endpoint(
+    id_sede: int,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(
+        require_role("Administrador")
+    )
+):
+    return activar_sede(
+        db,
+        id_sede
+    )
+
 
 
 # =========================================================

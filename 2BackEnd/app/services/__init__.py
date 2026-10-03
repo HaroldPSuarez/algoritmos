@@ -1,4 +1,4 @@
 from .user_service import get_user_by_email, create_user
-from .sede_service import get_sedes, create_sede, update_sede, desactivar_sede
+from .sede_service import get_sedes, create_sede, update_sede, desactivar_sede, activar_sede
 
-__all__ = ["get_user_by_email", "create_user", "get_sedes", "create_sede", "update_sede", "desactivar_sede"]
+__all__ = ["get_user_by_email", "create_user", "get_sedes", "create_sede", "update_sede", "desactivar_sede", "activar_sede"]
