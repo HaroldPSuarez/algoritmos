@@ -1,6 +1,6 @@
 import uvicorn
 from datetime import date
-from typing import List
+from typing import List, Optional
 
 from fastapi import (
     FastAPI,
@@ -10,6 +10,7 @@ from fastapi import (
 )
 
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.config import (
@@ -24,7 +25,7 @@ from app.services import (
     get_sedes,
     create_sede,
     update_sede,
-    desactivar_sede,    
+    desactivar_sede,
     activar_sede
 )
 
@@ -112,6 +113,14 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# =========================================================
+# SCHEMAS LOCALES
+# =========================================================
+
+class PasswordUpdate(BaseModel):
+    password: str
 
 
 # =========================================================
@@ -250,6 +259,7 @@ def eliminar_sede_endpoint(
         id_sede
     )
 
+
 @app.put(
     "/sedes/{id_sede}/activar",
     response_model=SedeResponse
@@ -265,7 +275,6 @@ def activar_sede_endpoint(
         db,
         id_sede
     )
-
 
 
 # =========================================================
@@ -291,8 +300,18 @@ def listar_usuarios(
 )
 def registrar_usuario_endpoint(
     usuario_data: UsuarioCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(
+        require_role("Administrador")
+    )
 ):
+    # La sede es obligatoria para todo usuario nuevo
+    if usuario_data.id_sede is None:
+        raise HTTPException(
+            status_code=400,
+            detail="Debes seleccionar una sede"
+        )
+
     return create_user(
         db,
         usuario_data
@@ -311,6 +330,13 @@ def eliminar_usuario_endpoint(
     )
 ):
 
+    # Evita que un administrador se desactive a sí mismo
+    if id_usuario == usuario.id:
+        raise HTTPException(
+            status_code=400,
+            detail="No puedes eliminar tu propio usuario"
+        )
+
     usuario_db = (
         db.query(Usuario)
         .filter(
@@ -325,6 +351,7 @@ def eliminar_usuario_endpoint(
             detail="Usuario no encontrado"
         )
 
+    # Borrado lógico: el usuario queda inactivo
     usuario_db.estado = False
 
     db.commit()
@@ -338,7 +365,7 @@ def eliminar_usuario_endpoint(
 )
 def cambiar_password(
     id_usuario: int,
-    password: str,
+    datos: PasswordUpdate,
     db: Session = Depends(get_db),
     usuario: Usuario = Depends(
         require_role("Administrador")
@@ -360,7 +387,7 @@ def cambiar_password(
         )
 
     usuario_db.hashed_password = (
-        get_password_hash(password)
+        get_password_hash(datos.password)
     )
 
     db.commit()
@@ -380,7 +407,7 @@ def cambiar_password(
     response_model=List[MesaResponse]
 )
 def listar_mesas(
-    id_sede: int = None,
+    id_sede: Optional[int] = None,
     db: Session = Depends(get_db),
     usuario: Usuario = Depends(
         get_current_user
@@ -601,16 +628,21 @@ def actualizar_inventario_endpoint(
         require_role("Administrador")
     )
 ):
-    item_db = db.query(Inventario).filter(Inventario.id == id_inventario).first()
+    item_db = (
+        db.query(Inventario)
+        .filter(Inventario.id == id_inventario)
+        .first()
+    )
+
     if not item_db:
         raise HTTPException(
             status_code=404,
             detail="Registro de inventario no encontrado"
         )
-    
+
     item_db.cantidad = data.cantidad
     item_db.stock_minimo = data.stock_minimo
-    
+
     db.commit()
     db.refresh(item_db)
     return item_db
@@ -627,14 +659,22 @@ def eliminar_inventario_endpoint(
         require_role("Administrador")
     )
 ):
-    item_db = db.query(Inventario).filter(Inventario.id == id_inventario).first()
+    item_db = (
+        db.query(Inventario)
+        .filter(Inventario.id == id_inventario)
+        .first()
+    )
+
     if not item_db:
         raise HTTPException(
             status_code=404,
             detail="Registro de inventario no encontrado"
         )
-    
-    db.query(MovimientoInventario).filter(MovimientoInventario.id_inventario == id_inventario).delete()
+
+    db.query(MovimientoInventario).filter(
+        MovimientoInventario.id_inventario == id_inventario
+    ).delete()
+
     db.delete(item_db)
     db.commit()
     return item_db
@@ -678,20 +718,38 @@ def agregar_detalles_por_mesa_endpoint(
     )
 ):
     pedido_db = db.query(Pedido).filter(
-        Pedido.id_mesa == id_mesa, 
+        Pedido.id_mesa == id_mesa,
         Pedido.estado == "activo"
     ).first()
-    
+
     if not pedido_db:
-        raise HTTPException(status_code=404, detail="No hay ningún pedido activo para esta mesa")
+        raise HTTPException(
+            status_code=404,
+            detail="No hay ningún pedido activo para esta mesa"
+        )
 
     for det in detalles:
         id_prod = det.get("id_producto")
         cant = det.get("cantidad")
 
-        producto_db = db.query(Producto).filter(Producto.id == id_prod).first()
+        # Cantidad válida (entero positivo)
+        if not isinstance(cant, int) or cant <= 0:
+            raise HTTPException(
+                status_code=400,
+                detail="La cantidad debe ser un número entero mayor a 0"
+            )
+
+        producto_db = (
+            db.query(Producto)
+            .filter(Producto.id == id_prod)
+            .first()
+        )
+
         if not producto_db:
-            raise HTTPException(status_code=404, detail=f"Producto #{id_prod} no encontrado")
+            raise HTTPException(
+                status_code=404,
+                detail=f"Producto #{id_prod} no encontrado"
+            )
 
         inventario_db = db.query(Inventario).filter(
             Inventario.id_producto == id_prod,
@@ -699,7 +757,10 @@ def agregar_detalles_por_mesa_endpoint(
         ).first()
 
         if not inventario_db or inventario_db.cantidad < cant:
-            raise HTTPException(status_code=400, detail=f"Stock insuficiente para {producto_db.nombre}")
+            raise HTTPException(
+                status_code=400,
+                detail=f"Stock insuficiente para {producto_db.nombre}"
+            )
 
         inventario_db.cantidad -= cant
 
@@ -710,8 +771,11 @@ def agregar_detalles_por_mesa_endpoint(
             precio_unitario=producto_db.precio
         )
         db.add(nuevo_detalle)
-        
-        pedido_db.total = float(pedido_db.total) + (float(producto_db.precio) * cant)
+
+        pedido_db.total = (
+            float(pedido_db.total)
+            + (float(producto_db.precio) * cant)
+        )
 
     db.commit()
     db.refresh(pedido_db)
@@ -729,13 +793,32 @@ def eliminar_detalle_pedido_endpoint(
         require_role("Mesero", "Administrador")
     )
 ):
-    detalle_db = db.query(DetallePedido).filter(DetallePedido.id == id_detalle).first()
-    if not detalle_db:
-        raise HTTPException(status_code=404, detail="Detalle de pedido no encontrado")
+    detalle_db = (
+        db.query(DetallePedido)
+        .filter(DetallePedido.id == id_detalle)
+        .first()
+    )
 
-    pedido_db = db.query(Pedido).filter(Pedido.id == detalle_db.id_pedido, Pedido.estado == "activo").first()
+    if not detalle_db:
+        raise HTTPException(
+            status_code=404,
+            detail="Detalle de pedido no encontrado"
+        )
+
+    pedido_db = (
+        db.query(Pedido)
+        .filter(
+            Pedido.id == detalle_db.id_pedido,
+            Pedido.estado == "activo"
+        )
+        .first()
+    )
+
     if not pedido_db:
-        raise HTTPException(status_code=404, detail="Pedido activo no encontrado")
+        raise HTTPException(
+            status_code=404,
+            detail="Pedido activo no encontrado"
+        )
 
     inventario_db = db.query(Inventario).filter(
         Inventario.id_producto == detalle_db.id_producto,
@@ -745,8 +828,13 @@ def eliminar_detalle_pedido_endpoint(
     if inventario_db:
         inventario_db.cantidad += detalle_db.cantidad
 
-    subtotal_item = float(detalle_db.precio_unitario) * detalle_db.cantidad
+    subtotal_item = (
+        float(detalle_db.precio_unitario)
+        * detalle_db.cantidad
+    )
+
     pedido_db.total = float(pedido_db.total) - subtotal_item
+
     if pedido_db.total < 0:
         pedido_db.total = 0.0
 
@@ -761,7 +849,7 @@ def eliminar_detalle_pedido_endpoint(
     response_model=List[PedidoResponse]
 )
 def listar_pedidos_activos(
-    id_sede: int = None,
+    id_sede: Optional[int] = None,
     db: Session = Depends(get_db),
     usuario: Usuario = Depends(
         get_current_user
@@ -828,7 +916,7 @@ def registrar_pago_endpoint(
     response_model=List[AuditoriaResponse]
 )
 def listar_auditoria(
-    id_sede: int = None,
+    id_sede: Optional[int] = None,
     limit: int = 100,
     db: Session = Depends(get_db),
     usuario: Usuario = Depends(
@@ -851,9 +939,9 @@ def listar_auditoria(
     response_model=List[ReporteVentasItem]
 )
 def reporte_ventas_endpoint(
-    id_sede: int = None,
-    fecha_inicio: date = None,
-    fecha_fin: date = None,
+    id_sede: Optional[int] = None,
+    fecha_inicio: Optional[date] = None,
+    fecha_fin: Optional[date] = None,
     db: Session = Depends(get_db),
     usuario: Usuario = Depends(
         require_role("Administrador")
@@ -872,7 +960,7 @@ def reporte_ventas_endpoint(
     response_model=List[ReporteInventarioItem]
 )
 def reporte_inventario_endpoint(
-    id_sede: int = None,
+    id_sede: Optional[int] = None,
     db: Session = Depends(get_db),
     usuario: Usuario = Depends(
         require_role("Administrador")

@@ -52,7 +52,8 @@ export default function Usuarios() {
   const cargarUsuarios = async () => {
     try {
       const res = await api.get("/usuarios");
-      setUsuarios(res.data);
+      // El backend hace borrado lógico (estado = false): solo mostramos activos
+      setUsuarios(res.data.filter((u: Usuario) => u.estado));
     } catch (err) {
       console.error("No se pudieron cargar los usuarios", err);
     }
@@ -80,6 +81,13 @@ export default function Usuarios() {
   const crearUsuario = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
+    // La sede es obligatoria
+    if (idSede === "") {
+      setError("Debes seleccionar una sede");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -88,7 +96,7 @@ export default function Usuarios() {
         email,
         password,
         id_rol: idRol,
-        id_sede: idSede === "" ? null : idSede,
+        id_sede: idSede,
       });
 
       cargarUsuarios();
@@ -98,7 +106,15 @@ export default function Usuarios() {
       setIdRol(2);
       setIdSede("");
     } catch (err: any) {
-      setError(err?.response?.data?.detail || "Error al crear el usuario");
+      const detail = err?.response?.data?.detail;
+      // FastAPI devuelve un array en errores 422 (validación)
+      const mensaje =
+        typeof detail === "string"
+          ? detail
+          : Array.isArray(detail)
+          ? "Revisa los datos del formulario (la sede es obligatoria)"
+          : "Error al crear el usuario";
+      setError(mensaje);
     } finally {
       setLoading(false);
     }
@@ -109,7 +125,7 @@ export default function Usuarios() {
 
     try {
       await api.delete(`/usuarios/${id}`);
-      setUsuarios(usuarios.filter((u) => u.id !== id));
+      await cargarUsuarios();
     } catch (err: any) {
       alert(err?.response?.data?.detail || "Error al eliminar el usuario");
     }
@@ -222,7 +238,7 @@ export default function Usuarios() {
                             borderRadius: "4px",
                             cursor: "pointer",
                             fontWeight: "bold",
-                            fontSize: "12px"
+                            fontSize: "12px",
                           }}
                         >
                           Clave
@@ -237,7 +253,7 @@ export default function Usuarios() {
                             borderRadius: "4px",
                             cursor: "pointer",
                             fontWeight: "bold",
-                            fontSize: "12px"
+                            fontSize: "12px",
                           }}
                         >
                           Eliminar
@@ -291,7 +307,11 @@ export default function Usuarios() {
               value={email}
               readOnly
               placeholder="Se autocompleta con el nombre"
-              style={{ backgroundColor: "#111827", cursor: "not-allowed", color: "#9ca3af" }}
+              style={{
+                backgroundColor: "#111827",
+                cursor: "not-allowed",
+                color: "#9ca3af",
+              }}
               required
             />
           </div>
@@ -325,7 +345,7 @@ export default function Usuarios() {
             </select>
           </div>
 
-          {/* SEDE */}
+          {/* SEDE (OBLIGATORIA) */}
           <div className="form-group">
             <label htmlFor="sede">Sede</label>
             <select
@@ -334,8 +354,11 @@ export default function Usuarios() {
               onChange={(e) =>
                 setIdSede(e.target.value === "" ? "" : Number(e.target.value))
               }
+              required
             >
-              <option value="">Sin asignar</option>
+              <option value="" disabled>
+                Selecciona una sede
+              </option>
               {sedes.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.nombre}

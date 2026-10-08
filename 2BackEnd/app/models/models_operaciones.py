@@ -277,6 +277,11 @@ class Pedido(Base):
         back_populates="pedido",
         cascade="all, delete-orphan"
     )
+    id_mesa = Column(
+    Integer,
+    ForeignKey("mesas.id"),
+    nullable=True
+)
 
 
 # =========================================================

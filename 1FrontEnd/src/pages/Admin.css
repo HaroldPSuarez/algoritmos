@@ -1,0 +1,251 @@
+/* ============================================
+   PANEL DE ADMINISTRACIÓN — Bar Pola y Punto
+   ============================================ */
+
+.admin-page {
+  --bg: #150f0b;
+  --bg-card: #1c1410;
+  --bg-card-hover: #241a14;
+  --border: rgba(255, 255, 255, 0.07);
+  --border-strong: rgba(217, 119, 6, 0.45);
+  --text: #f5ede4;
+  --text-muted: #a89a8c;
+  --text-faint: #7d7064;
+  --amber: #f59e0b;
+  --amber-deep: #d97706;
+
+  min-height: 100vh;
+  padding: 56px 64px 72px;
+  color: var(--text);
+  background:
+    radial-gradient(900px 420px at 85% -10%, rgba(217, 119, 6, 0.12), transparent 70%),
+    var(--bg);
+}
+
+.admin-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* ---------- Encabezado ---------- */
+
+.admin-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  margin-bottom: 56px;
+  animation: admin-rise 0.6s ease both;
+}
+
+@keyframes admin-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.admin-brand {
+  display: block;
+  margin-bottom: 14px;
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--amber);
+}
+
+.admin-hero h1 {
+  max-width: 14ch;
+  margin: 0 0 16px;
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: clamp(38px, 5vw, 58px);
+  line-height: 1.05;
+  font-weight: 700;
+  color: #fff;
+}
+
+.admin-hero p {
+  max-width: 52ch;
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+.admin-logout {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 20px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: #f0765f;
+  background: transparent;
+  border: 1px solid rgba(240, 118, 95, 0.45);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.admin-logout:hover {
+  color: #fff;
+  background: rgba(239, 68, 68, 0.85);
+  border-color: transparent;
+}
+
+/* ---------- Grupos ---------- */
+
+.admin-group {
+  margin-bottom: 44px;
+}
+
+.admin-group-head {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.admin-group-head h2 {
+  margin: 0;
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 24px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.admin-group-head span {
+  font-size: 14px;
+  color: var(--text-faint);
+}
+
+.admin-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+/* ---------- Tarjetas de navegación ---------- */
+
+.admin-card {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 22px 22px;
+  width: 100%;
+  font-family: inherit;
+  text-align: left;
+  color: var(--text);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.admin-card:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-strong);
+  transform: translateY(-2px);
+}
+
+.admin-card:focus-visible,
+.admin-logout:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 3px;
+}
+
+.admin-card-icon {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  color: var(--amber);
+  background: rgba(217, 119, 6, 0.1);
+  border: 1px solid rgba(217, 119, 6, 0.3);
+  border-radius: 12px;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.admin-card:hover .admin-card-icon {
+  color: #1a0f08;
+  background: var(--amber);
+}
+
+.admin-card-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.admin-card-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.admin-card-text strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.admin-card-text small {
+  display: block;
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+.admin-card-chevron {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  color: var(--text-faint);
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.admin-card:hover .admin-card-chevron {
+  color: var(--amber);
+  transform: translateX(4px);
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 760px) {
+  .admin-page {
+    padding: 32px 20px 56px;
+  }
+
+  .admin-hero {
+    flex-direction: column;
+    margin-bottom: 40px;
+  }
+
+  .admin-group-head {
+    flex-direction: column;
+    gap: 4px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-hero {
+    animation: none;
+  }
+
+  .admin-card,
+  .admin-card-chevron {
+    transition: none;
+  }
+
+  .admin-card:hover {
+    transform: none;
+  }
+}

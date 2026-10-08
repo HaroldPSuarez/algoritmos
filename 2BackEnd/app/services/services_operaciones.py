@@ -190,27 +190,39 @@ def eliminar_mesa(
             detail="Mesa no encontrada"
         )
 
-    # No permitir eliminar mesas que tengan pedidos
-    pedido_asociado = (
+    # Solo bloquea si hay un pedido activo (sin cobrar ni cancelar)
+    pedido_activo = (
         db.query(Pedido)
-        .filter(Pedido.id_mesa == id_mesa)
+        .filter(
+            Pedido.id_mesa == id_mesa,
+            Pedido.estado == EstadoPedido.activo
+        )
         .first()
     )
 
-    if pedido_asociado:
+    if pedido_activo or mesa.estado == EstadoMesa.ocupada:
         raise HTTPException(
             status_code=400,
             detail=(
-                "No se puede eliminar esta mesa "
-                "porque tiene pedidos asociados."
+                "No se puede eliminar esta mesa porque "
+                "tiene un pedido activo. Cóbralo o "
+                "cancélalo primero."
             )
         )
+
+    # Los pedidos ya cobrados/cancelados se conservan
+    # (para reportes y auditoría), solo se desvinculan
+    db.query(Pedido).filter(
+        Pedido.id_mesa == id_mesa
+    ).update(
+        {Pedido.id_mesa: None},
+        synchronize_session=False
+    )
 
     db.delete(mesa)
     db.commit()
 
     return mesa
-
 
 # =========================================================
 # PRODUCTOS
