@@ -52,6 +52,7 @@ from app.schemas import (
 
 from app.schemas.schemas_operaciones import (
     MesaCreate,
+    MesaUpdate,
     MesaResponse,
     ProductoCreate,
     ProductoResponse,

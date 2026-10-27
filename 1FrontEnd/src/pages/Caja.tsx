@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import api from "../api/axios";
 import { useNavigate } from "react-router-dom";
 import "./Mesas.css";
+import "@fortawesome/fontawesome-free/css/all.min.css";
 
 interface DetallePedido {
   id: number;

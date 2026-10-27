@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import api from "../api/axios";
 import "./Mesas.css"; // Reutilizamos el archivo de estilos unificado del panel
+import "@fortawesome/fontawesome-free/css/all.min.css";
 
 interface Sede {
   id: number;

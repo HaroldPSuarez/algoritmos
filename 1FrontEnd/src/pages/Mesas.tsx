@@ -1,8 +1,31 @@
 // src/pages/Mesas.tsx
-import { useEffect, useState } from "react";
+
+import { useEffect, useMemo, useState } from "react";
+import type { FormEvent } from "react";
+// import { useNavigate } from "react-router-dom";
+
 import api from "../api/axios";
-import { useNavigate } from "react-router-dom";
+
+import {
+  faChevronLeft,
+  faChevronRight,
+  faEye,
+  faMagnifyingGlass,
+  faPlus,
+  faRotate,
+  faTrash,
+  faPen,
+  faXmark,
+} from "@fortawesome/free-solid-svg-icons";
+
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+
 import "./Mesas.css";
+
+
+// ======================================================
+// INTERFACES
+// ======================================================
 
 interface Sede {
   id: number;
@@ -43,704 +66,2009 @@ interface PedidoActivo {
   detalles: DetallePedido[];
 }
 
+
+// ======================================================
+// COMPONENTE
+// ======================================================
+
 export default function MesasMesero() {
+
+  // const navigate = useNavigate();
+
+  // ----------------------------------------------------
+  // DATOS
+  // ----------------------------------------------------
+
   const [sedes, setSedes] = useState<Sede[]>([]);
   const [mesas, setMesas] = useState<Mesa[]>([]);
   const [productos, setProductos] = useState<Producto[]>([]);
   const [pedidosActivos, setPedidosActivos] = useState<PedidoActivo[]>([]);
-  
-  const [idSedeSeleccionada, setIdSedeSeleccionada] = useState<number | "">("");
-  const [mesaSeleccionada, setMesaSeleccionada] = useState<Mesa | null>(null);
-  const [pedidoActualMesa, setPedidoActualMesa] = useState<PedidoActivo | null>(null);
-  
-  const [itemsPedido, setItemsPedido] = useState<ItemPedido[]>([]);
-  const [idProductoActual, setIdProductoActual] = useState<number | "">("");
-  const [cantidadActual, setCantidadActual] = useState("1");
+
+  // ----------------------------------------------------
+  // FILTROS
+  // ----------------------------------------------------
+
+  const [idSedeSeleccionada, setIdSedeSeleccionada] =
+    useState<number | "">("");
+
+  const [busqueda, setBusqueda] = useState("");
+
+  const [pagina, setPagina] = useState(1);
+
+  const mesasPorPagina = 10;
+
+  // ----------------------------------------------------
+  // MODAL / PEDIDO
+  // ----------------------------------------------------
+
+  const [mesaSeleccionada, setMesaSeleccionada] =
+    useState<Mesa | null>(null);
+
+  const [pedidoActualMesa, setPedidoActualMesa] =
+    useState<PedidoActivo | null>(null);
+
+  const [itemsPedido, setItemsPedido] =
+    useState<ItemPedido[]>([]);
+
+  const [idProductoActual, setIdProductoActual] =
+    useState<number | "">("");
+
+  const [cantidadActual, setCantidadActual] =
+    useState("1");
+
+  // ----------------------------------------------------
+  // ESTADOS
+  // ----------------------------------------------------
+
+  const [loading, setLoading] = useState(false);
 
   const [error, setError] = useState("");
+
   const [exito, setExito] = useState("");
-  const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
+
+  // ====================================================
+  // CARGA INICIAL
+  // ====================================================
 
   useEffect(() => {
     cargarSedes();
     cargarProductos();
   }, []);
 
-  useEffect(() => {
-    if (idSedeSeleccionada !== "") {
-      cargarDatosSede(Number(idSedeSeleccionada));
-    } else {
-      setMesas([]);
-      setPedidosActivos([]);
-    }
-  }, [idSedeSeleccionada]);
+  // ====================================================
+  // CARGAR SEDES
+  // ====================================================
 
   const cargarSedes = async () => {
+
     try {
+
       const res = await api.get("/listar_sedes");
-      setSedes(res.data);
-      if (res.data.length > 0) {
-        setIdSedeSeleccionada(res.data[0].id);
-      }
+
+      setSedes(Array.isArray(res.data) ? res.data : []);
+
     } catch (err) {
-      console.error("Error al cargar sedes", err);
+
+      console.error("Error al cargar sedes:", err);
+
+      setError("No fue posible cargar las sedes.");
+
     }
   };
+
+  // ====================================================
+  // CARGAR PRODUCTOS
+  // ====================================================
 
   const cargarProductos = async () => {
+
     try {
+
       const res = await api.get("/productos");
-      setProductos(res.data);
+
+      setProductos(Array.isArray(res.data) ? res.data : []);
+
     } catch (err) {
-      console.error("Error al cargar productos", err);
+
+      console.error("Error al cargar productos:", err);
+
     }
   };
 
-  const cargarDatosSede = async (idSede: number) => {
+  // ====================================================
+  // CARGAR MESAS
+  // ====================================================
+
+  const cargarMesas = async () => {
+
     try {
-      setLoading(true);
-      const [resMesas, resPedidos] = await Promise.all([
-        api.get(`/mesas?id_sede=${idSede}`),
-        api.get(`/pedidos/activos?id_sede=${idSede}`)
-      ]);
-      setMesas(resMesas.data);
-      setPedidosActivos(resPedidos.data);
 
-      // Si hay una mesa seleccionada abierta, actualizar su pedido actual en tiempo real
-      if (mesaSeleccionada) {
-        const mesaActualizada = resMesas.data.find((m: Mesa) => m.id === mesaSeleccionada.id);
-        if (mesaActualizada) {
-          setMesaSeleccionada(mesaActualizada);
-          if (mesaActualizada.estado === "ocupada") {
-            const pedidoEncontrado = resPedidos.data.find((p: PedidoActivo) => p.id_mesa === mesaActualizada.id);
-            setPedidoActualMesa(pedidoEncontrado || null);
-          } else {
-            setPedidoActualMesa(null);
-          }
-        }
+      setLoading(true);
+      setError("");
+
+      // ----------------------------------------------
+      // SI SE SELECCIONÓ UNA SEDE
+      // ----------------------------------------------
+
+      if (idSedeSeleccionada !== "") {
+
+        const [resMesas, resPedidos] = await Promise.all([
+          api.get(`/mesas?id_sede=${idSedeSeleccionada}`),
+          api.get(`/pedidos/activos?id_sede=${idSedeSeleccionada}`),
+        ]);
+
+        setMesas(
+          Array.isArray(resMesas.data)
+            ? resMesas.data
+            : []
+        );
+
+        setPedidosActivos(
+          Array.isArray(resPedidos.data)
+            ? resPedidos.data
+            : []
+        );
+
+        return;
       }
+
+      // ----------------------------------------------
+      // TODAS LAS SEDES
+      // ----------------------------------------------
+
+      if (sedes.length === 0) {
+
+        setMesas([]);
+        setPedidosActivos([]);
+
+        return;
+      }
+
+      const respuestas = await Promise.all(
+        sedes.map(async (sede) => {
+
+          try {
+
+            const [resMesas, resPedidos] = await Promise.all([
+              api.get(`/mesas?id_sede=${sede.id}`),
+              api.get(`/pedidos/activos?id_sede=${sede.id}`),
+            ]);
+
+            return {
+              mesas: Array.isArray(resMesas.data)
+                ? resMesas.data
+                : [],
+
+              pedidos: Array.isArray(resPedidos.data)
+                ? resPedidos.data
+                : [],
+            };
+
+          } catch (err) {
+
+            console.error(
+              `Error cargando sede ${sede.id}:`,
+              err
+            );
+
+            return {
+              mesas: [],
+              pedidos: [],
+            };
+          }
+        })
+      );
+
+      setMesas(
+        respuestas.flatMap((item) => item.mesas)
+      );
+
+      setPedidosActivos(
+        respuestas.flatMap((item) => item.pedidos)
+      );
+
     } catch (err) {
-      console.error("Error al cargar datos de la sede", err);
+
+      console.error("Error cargando mesas:", err);
+
+      setError(
+        "No fue posible cargar la información de las mesas."
+      );
+
     } finally {
+
       setLoading(false);
+
     }
   };
 
-  const manejarClickMesa = (m: Mesa) => {
+  // ====================================================
+  // RECARGAR CUANDO CAMBIA LA SEDE
+  // ====================================================
+
+  useEffect(() => {
+
+    if (sedes.length > 0) {
+      cargarMesas();
+    }
+
+  }, [idSedeSeleccionada, sedes]);
+
+  // ====================================================
+  // NOMBRE DE SEDE
+  // ====================================================
+
+  const nombreSede = (idSede: number) => {
+
+    return (
+      sedes.find((sede) => sede.id === idSede)?.nombre ||
+      "Sin sede"
+    );
+  };
+
+  // ====================================================
+  // NORMALIZAR ESTADO
+  // ====================================================
+
+  const obtenerEstado = (estado: string): "Disponible" | "Ocupada" => {
+  const estadoNormalizado = estado?.toLowerCase().trim();
+
+  if (
+    estadoNormalizado === "ocupada" ||
+    estadoNormalizado === "ocupado"
+  ) {
+    return "Ocupada";
+  }
+
+  return "Disponible";
+};
+
+  // ====================================================
+  // MESAS FILTRADAS
+  // ====================================================
+
+  const mesasFiltradas = useMemo(() => {
+
+    const texto = busqueda.toLowerCase().trim();
+
+    return mesas.filter((mesa) => {
+
+      const sede = nombreSede(mesa.id_sede);
+
+      const coincideSede =
+        idSedeSeleccionada === "" ||
+        mesa.id_sede === Number(idSedeSeleccionada);
+
+      const coincideBusqueda =
+        texto === "" ||
+        `mesa ${mesa.numero}`
+          .toLowerCase()
+          .includes(texto) ||
+        sede.toLowerCase().includes(texto) ||
+        obtenerEstado(mesa.estado)
+          .toLowerCase()
+          .includes(texto);
+
+      return coincideSede && coincideBusqueda;
+
+    });
+
+  }, [
+    mesas,
+    busqueda,
+    idSedeSeleccionada,
+    sedes,
+  ]);
+
+  // ====================================================
+  // ESTADÍSTICAS
+  // ====================================================
+
+  const totalMesas = mesasFiltradas.length;
+
+  const mesasDisponibles = mesasFiltradas.filter(
+    (mesa) => obtenerEstado(mesa.estado) === "Disponible"
+  ).length;
+
+  const mesasOcupadas = mesasFiltradas.filter(
+    (mesa) => obtenerEstado(mesa.estado) === "Ocupada"
+  ).length;
+
+  // ====================================================
+  // PAGINACIÓN
+  // ====================================================
+
+  const totalPaginas =
+    Math.ceil(totalMesas / mesasPorPagina);
+
+  const indiceInicial =
+    (pagina - 1) * mesasPorPagina;
+
+  const indiceFinal =
+    indiceInicial + mesasPorPagina;
+
+  const mesasPagina =
+    mesasFiltradas.slice(
+      indiceInicial,
+      indiceFinal
+    );
+
+  // ====================================================
+  // CAMBIO DE FILTRO
+  // ====================================================
+
+  const cambiarSede = (
+    e: React.ChangeEvent<HTMLSelectElement>
+  ) => {
+
+    const value = e.target.value;
+
+    setIdSedeSeleccionada(
+      value === "" ? "" : Number(value)
+    );
+
+    setPagina(1);
+  };
+
+  // ====================================================
+  // BUSCAR
+  // ====================================================
+
+  const cambiarBusqueda = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+
+    setBusqueda(e.target.value);
+
+    setPagina(1);
+  };
+
+  // ====================================================
+  // ABRIR MESA
+  // ====================================================
+
+  const abrirMesa = (mesa: Mesa) => {
+
     setError("");
     setExito("");
-    setMesaSeleccionada(m);
+
+    setMesaSeleccionada(mesa);
+
     setItemsPedido([]);
 
-    if (m.estado === "ocupada") {
-      const pedidoEncontrado = pedidosActivos.find((p) => p.id_mesa === m.id);
-      setPedidoActualMesa(pedidoEncontrado || null);
-    } else {
-      setPedidoActualMesa(null);
-    }
+    const pedido = pedidosActivos.find(
+      (p) => p.id_mesa === mesa.id
+    );
+
+    setPedidoActualMesa(
+      pedido || null
+    );
   };
 
-  const agregarItemLocal = (e: React.FormEvent) => {
+  // ====================================================
+  // CERRAR MODAL
+  // ====================================================
+
+  const cerrarModal = () => {
+
+    setMesaSeleccionada(null);
+
+    setPedidoActualMesa(null);
+
+    setItemsPedido([]);
+
+    setIdProductoActual("");
+
+    setCantidadActual("1");
+
+    setError("");
+  };
+
+  // ====================================================
+  // PRODUCTO
+  // ====================================================
+
+  const nombreProducto = (id: number) => {
+
+    return (
+      productos.find(
+        (producto) => producto.id === id
+      )?.nombre ||
+      `Producto #${id}`
+    );
+  };
+
+  const precioProducto = (id: number) => {
+
+    return (
+      productos.find(
+        (producto) => producto.id === id
+      )?.precio || 0
+    );
+  };
+
+  // ====================================================
+  // AGREGAR PRODUCTO LOCAL
+  // ====================================================
+
+  const agregarItemLocal = (
+    e: FormEvent
+  ) => {
+
     e.preventDefault();
-    if (idProductoActual === "" || Number(cantidadActual) <= 0) return;
 
-    const idProd = Number(idProductoActual);
-    const cant = Number(cantidadActual);
+    if (
+      idProductoActual === "" ||
+      Number(cantidadActual) <= 0
+    ) {
+      return;
+    }
 
-    const existente = itemsPedido.find((i) => i.id_producto === idProd);
+    const idProducto =
+      Number(idProductoActual);
+
+    const cantidad =
+      Number(cantidadActual);
+
+    const existente =
+      itemsPedido.find(
+        (item) =>
+          item.id_producto === idProducto
+      );
+
     if (existente) {
+
       setItemsPedido(
-        itemsPedido.map((i) =>
-          i.id_producto === idProd ? { ...i, cantidad: i.cantidad + cant } : i
+        itemsPedido.map((item) =>
+          item.id_producto === idProducto
+            ? {
+                ...item,
+                cantidad:
+                  item.cantidad + cantidad,
+              }
+            : item
         )
       );
+
     } else {
-      setItemsPedido([...itemsPedido, { id_producto: idProd, cantidad: cant }]);
+
+      setItemsPedido([
+        ...itemsPedido,
+        {
+          id_producto: idProducto,
+          cantidad,
+        },
+      ]);
     }
 
     setIdProductoActual("");
+
     setCantidadActual("1");
   };
 
-  const removerItemLocal = (idProd: number) => {
-    setItemsPedido(itemsPedido.filter((i) => i.id_producto !== idProd));
+  // ====================================================
+  // ELIMINAR PRODUCTO LOCAL
+  // ====================================================
+
+  const removerItemLocal = (
+    idProducto: number
+  ) => {
+
+    setItemsPedido(
+      itemsPedido.filter(
+        (item) =>
+          item.id_producto !== idProducto
+      )
+    );
   };
 
-  const confirmarNuevoPedido = async () => {
-    if (!mesaSeleccionada || itemsPedido.length === 0) {
-      setError("Debe agregar al menos un producto.");
-      return;
-    }
-
-    setError("");
-    setExito("");
-    setLoading(true);
-
-    try {
-      await api.post("/pedidos", {
-        id_mesa: mesaSeleccionada.id,
-        id_sede: Number(idSedeSeleccionada),
-        detalles: itemsPedido,
-      });
-
-      setExito(`¡Pedido registrado con éxito para la Mesa #${mesaSeleccionada.numero}!`);
-      setMesaSeleccionada(null);
-      setItemsPedido([]);
-      cargarDatosSede(Number(idSedeSeleccionada));
-    } catch (err: any) {
-      setError(err?.response?.data?.detail || "Error al registrar el pedido");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const agregarProductosAPedidoExistente = async () => {
-    if (!mesaSeleccionada || itemsPedido.length === 0) {
-      setError("Debe seleccionar una mesa y agregar al menos un producto nuevo.");
-      return;
-    }
-
-    setError("");
-    setExito("");
-    setLoading(true);
-
-    try {
-      await api.post(`/mesas/${mesaSeleccionada.id}/detalles-pedido`, itemsPedido);
-      setExito("Productos añadidos al pedido correctamente.");
-      setItemsPedido([]);
-      cargarDatosSede(Number(idSedeSeleccionada));
-    } catch (err: any) {
-      setError(err?.response?.data?.detail || "Error al añadir productos al pedido");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const quitarDetallePedido = async (idDetalle: number) => {
-    if (!window.confirm("¿Estás seguro de quitar este producto del pedido? Se devolverá al inventario.")) return;
-
-    setError("");
-    setExito("");
-    setLoading(true);
-
-    try {
-      const res = await api.delete(`/pedidos/detalles/${idDetalle}`);
-      setExito("Producto retirado del pedido correctamente.");
-      
-      // Si el pedido se quedó sin detalles, recargar completamente la sede
-      if (!res.data.detalles || res.data.detalles.length === 0) {
-        setMesaSeleccionada(null);
-        setPedidoActualMesa(null);
-      } else {
-        setPedidoActualMesa(res.data);
-      }
-      
-      cargarDatosSede(Number(idSedeSeleccionada));
-    } catch (err: any) {
-      setError(err?.response?.data?.detail || "Error al retirar el producto del pedido");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const cancelarPedidoActual = async (idPedido: number) => {
-    if (!window.confirm("¿Estás seguro de cancelar este pedido completo? Se liberará la mesa y se revertirá el inventario.")) return;
-
-    setError("");
-    setExito("");
-    setLoading(true);
-
-    try {
-      await api.put(`/pedidos/${idPedido}/cancelar`);
-      setExito("Pedido cancelado correctamente.");
-      setMesaSeleccionada(null);
-      setPedidoActualMesa(null);
-      cargarDatosSede(Number(idSedeSeleccionada));
-    } catch (err: any) {
-      setError(err?.response?.data?.detail || "Error al cancelar el pedido");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const cerrarSesion = () => {
-    localStorage.removeItem("token");
-    sessionStorage.removeItem("token");
-    navigate("/login");
-  };
-
-  const nombreProducto = (id: number) => productos.find((p) => p.id === id)?.nombre || `Producto #${id}`;
-  const precioProducto = (id: number) => productos.find((p) => p.id === id)?.precio || 0;
+  // ====================================================
+  // TOTAL LOCAL
+  // ====================================================
 
   const calcularTotalLocal = () => {
-    return itemsPedido.reduce((acc, item) => acc + precioProducto(item.id_producto) * item.cantidad, 0);
+
+    return itemsPedido.reduce(
+      (total, item) =>
+        total +
+        precioProducto(item.id_producto) *
+          item.cantidad,
+      0
+    );
   };
 
+  // ====================================================
+  // CREAR PEDIDO
+  // ====================================================
+
+  const confirmarNuevoPedido = async () => {
+
+    if (
+      !mesaSeleccionada ||
+      itemsPedido.length === 0
+    ) {
+
+      setError(
+        "Debes agregar al menos un producto."
+      );
+
+      return;
+    }
+
+    setLoading(true);
+
+    setError("");
+    setExito("");
+
+    try {
+
+      await api.post("/pedidos", {
+
+        id_mesa:
+          mesaSeleccionada.id,
+
+        id_sede:
+          mesaSeleccionada.id_sede,
+
+        detalles:
+          itemsPedido,
+      });
+
+      setExito(
+        `Pedido registrado correctamente para la Mesa #${mesaSeleccionada.numero}.`
+      );
+
+      setItemsPedido([]);
+
+      setMesaSeleccionada(null);
+
+      await cargarMesas();
+
+    } catch (err: any) {
+
+      setError(
+        err?.response?.data?.detail ||
+        "Error al registrar el pedido."
+      );
+
+    } finally {
+
+      setLoading(false);
+    }
+  };
+
+  // ====================================================
+  // AGREGAR PRODUCTOS A PEDIDO EXISTENTE
+  // ====================================================
+
+  const agregarProductosAPedidoExistente =
+    async () => {
+
+      if (
+        !mesaSeleccionada ||
+        itemsPedido.length === 0
+      ) {
+
+        setError(
+          "Debes agregar al menos un producto."
+        );
+
+        return;
+      }
+
+      setLoading(true);
+
+      setError("");
+      setExito("");
+
+      try {
+
+        await api.post(
+          `/mesas/${mesaSeleccionada.id}/detalles-pedido`,
+          itemsPedido
+        );
+
+        setExito(
+          "Productos añadidos al pedido correctamente."
+        );
+
+        setItemsPedido([]);
+
+        await cargarMesas();
+
+      } catch (err: any) {
+
+        setError(
+          err?.response?.data?.detail ||
+          "Error al añadir productos."
+        );
+
+      } finally {
+
+        setLoading(false);
+      }
+    };
+
+  // ====================================================
+  // QUITAR DETALLE
+  // ====================================================
+
+  const quitarDetallePedido =
+    async (idDetalle: number) => {
+
+      const confirmar =
+        window.confirm(
+          "¿Deseas quitar este producto del pedido?"
+        );
+
+      if (!confirmar) {
+        return;
+      }
+
+      setLoading(true);
+
+      setError("");
+      setExito("");
+
+      try {
+
+        const res = await api.delete(
+          `/pedidos/detalles/${idDetalle}`
+        );
+
+        setExito(
+          "Producto retirado correctamente."
+        );
+
+        if (
+          !res.data?.detalles ||
+          res.data.detalles.length === 0
+        ) {
+
+          setPedidoActualMesa(null);
+
+        } else {
+
+          setPedidoActualMesa(
+            res.data
+          );
+        }
+
+        await cargarMesas();
+
+      } catch (err: any) {
+
+        setError(
+          err?.response?.data?.detail ||
+          "No fue posible retirar el producto."
+        );
+
+      } finally {
+
+        setLoading(false);
+      }
+    };
+
+  // ====================================================
+  // CANCELAR PEDIDO
+  // ====================================================
+
+  const cancelarPedidoActual =
+    async (idPedido: number) => {
+
+      const confirmar =
+        window.confirm(
+          "¿Deseas cancelar este pedido completo?"
+        );
+
+      if (!confirmar) {
+        return;
+      }
+
+      setLoading(true);
+
+      setError("");
+      setExito("");
+
+      try {
+
+        await api.put(
+          `/pedidos/${idPedido}/cancelar`
+        );
+
+        setExito(
+          "Pedido cancelado correctamente."
+        );
+
+        setMesaSeleccionada(null);
+
+        setPedidoActualMesa(null);
+
+        await cargarMesas();
+
+      } catch (err: any) {
+
+        setError(
+          err?.response?.data?.detail ||
+          "No fue posible cancelar el pedido."
+        );
+
+      } finally {
+
+        setLoading(false);
+      }
+    };
+
+  // ====================================================
+  // NUEVA MESA
+  // ====================================================
+
+  const nuevaMesa = () => {
+
+    setError(
+      "La creación de mesas requiere el endpoint correspondiente en el backend."
+    );
+  };
+
+  // ====================================================
+  // ELIMINAR MESA
+  // ====================================================
+
+  const eliminarMesa = (mesa: Mesa) => {
+
+    setError(
+      `La eliminación de la Mesa #${mesa.numero} requiere un endpoint de eliminación en el backend.`
+    );
+  };
+
+  // ====================================================
+  // CERRAR SESIÓN
+  // ====================================================
+  // const cerrarSesion = () => {
+  //   localStorage.removeItem("token");
+  //   sessionStorage.removeItem("token");
+  //   navigate("/login");
+  // };
+
+  // ====================================================
+  // RENDER
+  // ====================================================
+
   return (
-    <div className="productos-page">
-      {/* HEADER */}
-      <div className="productos-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+
+    <div className="mesas-page">
+
+      {/* ==============================================
+          HEADER
+      =============================================== */}
+
+      <header className="mesas-header">
+
         <div>
-          <span className="productos-eyebrow">MÓDULO DE OPERACIÓN</span>
-          <h1>Planta de Mesas</h1>
-          <p>Selecciona una sede, revisa el estado de las mesas y administra los pedidos activos.</p>
+
+          <span className="mesas-eyebrow">
+            ADMINISTRACIÓN
+          </span>
+
+          <h1>
+            Gestión de Mesas
+          </h1>
+
+          <p>
+            Administra, filtra y configura las mesas
+            por cada sede del bar.
+          </p>
+
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
+      </header>
+
+
+      {/* ==============================================
+          MENSAJES
+      =============================================== */}
+
+      {error && (
+
+        <div className="mesas-alert mesas-alert-error">
+
+          <span>
+            {error}
+          </span>
+
           <button
             type="button"
-            onClick={cerrarSesion}
-            style={{
-              backgroundColor: "transparent",
-              border: "1px solid rgba(239, 68, 68, 0.4)",
-              color: "#ef4444",
-              padding: "10px 16px",
-              borderRadius: "8px",
-              cursor: "pointer",
-              fontWeight: "600",
-              fontSize: "13px",
-            }}
+            onClick={() => setError("")}
           >
-            Cerrar sesión
+            <FontAwesomeIcon icon={faXmark} />
           </button>
-        </div>
-      </div>
 
-      {/* MENSAJES */}
-      {error && (
-        <div className="producto-error form-full" style={{ marginBottom: "20px" }}>
-          <span>⚠️</span> {error}
         </div>
+
       )}
 
       {exito && (
-        <div
-          style={{
-            backgroundColor: "rgba(16, 185, 129, 0.15)",
-            color: "#34d399",
-            border: "1px solid rgba(16, 185, 129, 0.3)",
-            padding: "12px",
-            borderRadius: "8px",
-            marginBottom: "20px",
-            fontSize: "13px",
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-          }}
-        >
-          <span>✅</span> {exito}
+
+        <div className="mesas-alert mesas-alert-success">
+
+          <span>
+            {exito}
+          </span>
+
+          <button
+            type="button"
+            onClick={() => setExito("")}
+          >
+            <FontAwesomeIcon icon={faXmark} />
+          </button>
+
         </div>
+
       )}
 
-      {/* FILTRO DE SEDE */}
-      <div
-        style={{
-          marginBottom: "25px",
-          display: "flex",
-          gap: "20px",
-          alignItems: "center",
-          background: "#19130f",
-          padding: "18px 22px",
-          borderRadius: "12px",
-          border: "1px solid #30251e",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "10px", width: "100%" }}>
-          <label style={{ color: "#bcae9e", fontSize: "12px", fontWeight: "600", whiteSpace: "nowrap" }}>
-            Seleccionar Sede de Servicio:
-          </label>
-          <select
-            value={idSedeSeleccionada}
-            onChange={(e) => {
-              setIdSedeSeleccionada(e.target.value === "" ? "" : Number(e.target.value));
-              setMesaSeleccionada(null);
-            }}
-            style={{
-              background: "#241b15",
-              border: "1px solid #3b2d23",
-              color: "#eee5da",
-              padding: "8px 12px",
-              borderRadius: "6px",
-              outline: "none",
-              fontSize: "13px",
-              maxWidth: "300px",
-              width: "100%",
-            }}
-          >
-            <option value="">Selecciona una sede</option>
-            {sedes.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.nombre}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
 
-      {/* GRILLA DE MESAS */}
-      <section className="productos-card" style={{ marginBottom: "30px" }}>
-        <div className="section-header">
+      {/* ==============================================
+          ESTADÍSTICAS
+      =============================================== */}
+
+      <section className="mesas-stats">
+
+        <div className="mesa-stat-card">
+
+          <div className="mesa-stat-icon">
+            <FontAwesomeIcon icon={faEye} />
+          </div>
+
           <div>
-            <h2>Estado de las Mesas</h2>
-            <p>Haz clic en una mesa para ver su detalle, agregar/quitar productos o cancelarla.</p>
+
+            <span>
+              Total de mesas
+            </span>
+
+            <strong>
+              {totalMesas}
+            </strong>
+
           </div>
+
         </div>
 
-        {mesas.length > 0 ? (
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
-              gap: "16px",
-              padding: "10px 0",
-            }}
-          >
-            {mesas.map((m) => {
-              const ocupada = m.estado === "ocupada";
-              return (
-                <div
-                  key={m.id}
-                  onClick={() => manejarClickMesa(m)}
-                  style={{
-                    backgroundColor: ocupada ? "#261717" : "#19221b",
-                    border: `1px solid ${ocupada ? "#7f1d1d" : "#065f46"}`,
-                    borderRadius: "10px",
-                    padding: "20px",
-                    cursor: "pointer",
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    gap: "10px",
-                    transition: "transform 0.1s ease",
-                  }}
-                >
-                  <span style={{ fontSize: "28px" }}>🪑</span>
-                  <h3 style={{ margin: 0, color: "#eee5da" }}>Mesa #{m.numero}</h3>
-                  <span style={{ fontSize: "12px", color: "#bcae9e" }}>👥 Capacidad: {m.capacidad}</span>
-                  <span
-                    className={ocupada ? "estado-badge estado-inactivo" : "estado-badge estado-activo"}
-                    style={{ marginTop: "5px" }}
-                  >
-                    <span className="estado-dot"></span>
-                    {m.estado.toUpperCase()}
-                  </span>
-                </div>
-              );
-            })}
+
+        <div className="mesa-stat-card">
+
+          <div className="mesa-stat-icon">
+            <span className="stat-dot stat-dot-green" />
           </div>
-        ) : (
-          <div className="productos-empty">
-            <div className="empty-icon">🪑</div>
-            <h3>No hay mesas registradas en esta sede</h3>
-            <p>Selecciona otra sede en el menú superior.</p>
+
+          <div>
+
+            <span>
+              Disponibles
+            </span>
+
+            <strong>
+              {mesasDisponibles}
+            </strong>
+
           </div>
-        )}
+
+        </div>
+
+
+        <div className="mesa-stat-card">
+
+          <div className="mesa-stat-icon">
+            <span className="stat-dot stat-dot-red" />
+          </div>
+
+          <div>
+
+            <span>
+              Ocupadas
+            </span>
+
+            <strong>
+              {mesasOcupadas}
+            </strong>
+
+          </div>
+
+        </div>
+
+
+        <div className="mesa-stat-card">
+
+          <div className="mesa-stat-icon">
+            <span className="stat-building">
+              S
+            </span>
+          </div>
+
+          <div>
+
+            <span>
+              Sedes
+            </span>
+
+            <strong>
+              {sedes.length}
+            </strong>
+
+          </div>
+
+        </div>
+
       </section>
 
-      {/* MODAL / SECCIÓN DE GESTIÓN DE MESA */}
-      {mesaSeleccionada && (
-        <section className="nuevo-producto-card">
-          <div className="section-header">
-            <div>
-              <span className="section-label">
-                {mesaSeleccionada.estado === "ocupada" ? "GESTIÓN DE PEDIDO" : "NUEVO PEDIDO"}
-              </span>
-              <h2>Mesa #{mesaSeleccionada.numero}</h2>
-              <p>
-                {mesaSeleccionada.estado === "ocupada"
-                  ? "Consulta los productos, retira ítems específicos, añade más o cancela el pedido."
-                  : "Añade los productos que el cliente desea consumir."}
-              </p>
-            </div>
+
+      {/* ==============================================
+          FILTROS
+      =============================================== */}
+
+      <section className="mesas-toolbar">
+
+        <div className="mesas-filter">
+
+          <label>
+            Filtrar por Sede:
+          </label>
+
+          <select
+            value={idSedeSeleccionada}
+            onChange={cambiarSede}
+          >
+
+            <option value="">
+              Todas las sedes
+            </option>
+
+            {sedes.map((sede) => (
+
+              <option
+                key={sede.id}
+                value={sede.id}
+              >
+                {sede.nombre}
+              </option>
+
+            ))}
+
+          </select>
+
+        </div>
+
+
+        <div className="mesas-search">
+
+          <FontAwesomeIcon
+            icon={faMagnifyingGlass}
+          />
+
+          <input
+            type="text"
+            placeholder="Buscar mesa..."
+            value={busqueda}
+            onChange={cambiarBusqueda}
+          />
+
+        </div>
+
+
+        <button
+          type="button"
+          className="btn-nueva-mesa"
+          onClick={nuevaMesa}
+        >
+
+          <FontAwesomeIcon icon={faPlus} />
+
+          Nueva mesa
+
+        </button>
+
+      </section>
+
+
+      {/* ==============================================
+          TABLA
+      =============================================== */}
+
+      <section className="mesas-card">
+
+        <div className="mesas-table-header">
+
+          <div>
+
+            <h2>
+              Mesas registradas
+            </h2>
+
+            <p>
+              Consulta y administra el estado
+              de las mesas en tiempo real.
+            </p>
+
           </div>
 
-          {/* SI LA MESA ESTÁ OCUPADA */}
-          {mesaSeleccionada.estado === "ocupada" ? (
-            <div>
-              {pedidoActualMesa ? (
-                <div>
-                  <div style={{ background: "#19130f", padding: "15px", borderRadius: "8px", border: "1px solid #30251e", marginBottom: "20px" }}>
-                    <p style={{ color: "#eee5da", margin: "0 0 8px 0" }}><strong>Pedido N°:</strong> #{pedidoActualMesa.id}</p>
-                    <p style={{ color: "#34d399", margin: "0", fontSize: "16px", fontWeight: "bold" }}>Total actual: ${pedidoActualMesa.total}</p>
-                  </div>
 
-                  <h3 style={{ color: "#eee5da", fontSize: "15px", marginBottom: "10px" }}>Productos ya solicitados:</h3>
-                  <div className="productos-table-wrapper" style={{ marginBottom: "20px" }}>
-                    <table className="productos-table">
-                      <thead>
-                        <tr>
-                          <th>Producto</th>
-                          <th>Cantidad</th>
-                          <th>Precio Unit.</th>
-                          <th>Subtotal</th>
-                          <th>Acción</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {pedidoActualMesa.detalles.map((det) => (
-                          <tr key={det.id}>
-                            <td>{nombreProducto(det.id_producto)}</td>
-                            <td>{det.cantidad}</td>
-                            <td>${det.precio_unitario}</td>
-                            <td style={{ fontWeight: "bold", color: "#34d399" }}>
-                              ${det.cantidad * Number(det.precio_unitario)}
-                            </td>
-                            <td>
-                              <button
-                                type="button"
-                                onClick={() => quitarDetallePedido(det.id)}
-                                disabled={loading}
-                                style={{
-                                  backgroundColor: "#ef4444",
-                                  color: "#fff",
-                                  border: "none",
-                                  padding: "4px 10px",
-                                  borderRadius: "4px",
-                                  cursor: "pointer",
-                                  fontSize: "12px",
-                                  fontWeight: "600",
-                                }}
-                              >
-                                Quitar
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+          <button
+            type="button"
+            className="btn-refresh"
+            onClick={cargarMesas}
+            title="Actualizar"
+          >
 
-                  {/* FORMULARIO PARA AGREGAR MÁS PRODUCTOS AL PEDIDO EXISTENTE */}
-                  <h3 style={{ color: "#eee5da", fontSize: "15px", marginBottom: "10px" }}>Añadir más productos:</h3>
-                  <form onSubmit={agregarItemLocal} className="producto-form" style={{ marginBottom: "20px" }}>
-                    <div className="form-group">
-                      <label>Producto</label>
-                      <select
-                        value={idProductoActual}
-                        onChange={(e) => setIdProductoActual(e.target.value === "" ? "" : Number(e.target.value))}
-                      >
-                        <option value="">Selecciona un producto</option>
-                        {productos.map((p) => (
-                          <option key={p.id} value={p.id}>
-                            {p.nombre} (${p.precio})
-                          </option>
-                        ))}
-                      </select>
+            <FontAwesomeIcon
+              icon={faRotate}
+              spin={loading}
+            />
+
+          </button>
+
+        </div>
+
+
+        <div className="mesas-table-wrapper">
+
+          <table className="mesas-table">
+
+            <thead>
+
+              <tr>
+
+                <th>
+                  #
+                </th>
+
+                <th>
+                  Mesa
+                </th>
+
+                <th>
+                  Sede
+                </th>
+
+                <th>
+                  Capacidad
+                </th>
+
+                <th>
+                  Estado
+                </th>
+
+                <th className="acciones-column">
+                  Acciones
+                </th>
+
+              </tr>
+
+            </thead>
+
+
+            <tbody>
+
+              {loading ? (
+
+                <tr>
+
+                  <td
+                    colSpan={6}
+                    className="mesas-empty"
+                  >
+
+                    <div className="empty-loading">
+
+                      <FontAwesomeIcon
+                        icon={faRotate}
+                        spin
+                      />
+
+                      <span>
+                        Cargando mesas...
+                      </span>
+
                     </div>
 
-                    <div className="form-group">
-                      <label>Cantidad</label>
+                  </td>
+
+                </tr>
+
+              ) : mesasPagina.length > 0 ? (
+
+                mesasPagina.map(
+                  (mesa, index) => {
+
+                    const estado =
+                      obtenerEstado(
+                        mesa.estado
+                      );
+
+                    return (
+
+                      <tr
+                        key={mesa.id}
+                        className="mesa-row"
+                      >
+
+                        <td className="numero-cell">
+
+                          {indiceInicial +
+                            index +
+                            1}
+
+                        </td>
+
+
+                        <td>
+
+                          <div className="mesa-name">
+
+                            <div className="mesa-number-circle">
+                              {mesa.numero}
+                            </div>
+
+                            <div>
+
+                              <strong>
+                                Mesa {mesa.numero}
+                              </strong>
+
+                              <span>
+                                ID #{mesa.id}
+                              </span>
+
+                            </div>
+
+                          </div>
+
+                        </td>
+
+
+                        <td>
+
+                          <span className="sede-name">
+                            {nombreSede(
+                              mesa.id_sede
+                            )}
+                          </span>
+
+                        </td>
+
+
+                        <td>
+
+                          <span className="capacidad">
+
+                            {mesa.capacidad}
+
+                            <small>
+                              personas
+                            </small>
+
+                          </span>
+
+                        </td>
+
+
+                        <td>
+
+                          <span
+                            className={
+                              `mesa-status status-${estado.toLowerCase()}`
+                            }
+                          >
+
+                            <span className="status-dot" />
+
+                            {estado}
+
+                          </span>
+
+                        </td>
+
+
+                        <td>
+
+                          <div className="mesa-actions">
+
+                            <button
+                              type="button"
+                              className="action-btn action-view"
+                              title="Ver mesa"
+                              onClick={() =>
+                                abrirMesa(mesa)
+                              }
+                            >
+
+                              <FontAwesomeIcon
+                                icon={faEye}
+                              />
+
+                            </button>
+
+
+                            <button
+                              type="button"
+                              className="action-btn action-edit"
+                              title="Editar mesa"
+                              onClick={() =>
+                                setError(
+                                  "La edición de mesas requiere el endpoint correspondiente en el backend."
+                                )
+                              }
+                            >
+
+                              <FontAwesomeIcon
+                                icon={faPen}
+                              />
+
+                            </button>
+
+
+                            <button
+                              type="button"
+                              className="action-btn action-delete"
+                              title="Eliminar mesa"
+                              onClick={() =>
+                                eliminarMesa(mesa)
+                              }
+                            >
+
+                              <FontAwesomeIcon
+                                icon={faTrash}
+                              />
+
+                            </button>
+
+                          </div>
+
+                        </td>
+
+                      </tr>
+
+                    );
+                  }
+                )
+
+              ) : (
+
+                <tr>
+
+                  <td
+                    colSpan={6}
+                    className="mesas-empty"
+                  >
+
+                    <div className="empty-state">
+
+                      <div className="empty-state-icon">
+                        🪑
+                      </div>
+
+                      <h3>
+                        No hay mesas registradas
+                      </h3>
+
+                      <p>
+                        No encontramos mesas
+                        con los filtros seleccionados.
+                      </p>
+
+                    </div>
+
+                  </td>
+
+                </tr>
+
+              )}
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+
+        {/* ==========================================
+            FOOTER TABLA
+        =========================================== */}
+
+        <div className="mesas-table-footer">
+
+          <span>
+
+            Mostrando{" "}
+
+            {totalMesas === 0
+              ? 0
+              : indiceInicial + 1}
+
+            {" - "}
+
+            {Math.min(
+              indiceFinal,
+              totalMesas
+            )}
+
+            {" "}de{" "}
+
+            {totalMesas}
+
+            {" "}mesas
+
+          </span>
+
+
+          <div className="pagination">
+
+            <button
+              type="button"
+              disabled={pagina <= 1}
+              onClick={() =>
+                setPagina(
+                  (actual) =>
+                    Math.max(1, actual - 1)
+                )
+              }
+            >
+
+              <FontAwesomeIcon
+                icon={faChevronLeft}
+              />
+
+            </button>
+
+
+            {Array.from(
+              {
+                length: Math.max(
+                  totalPaginas,
+                  1
+                ),
+              },
+              (_, index) =>
+                index + 1
+            )
+              .slice(0, 5)
+              .map((numero) => (
+
+                <button
+                  key={numero}
+                  type="button"
+                  className={
+                    pagina === numero
+                      ? "active"
+                      : ""
+                  }
+                  onClick={() =>
+                    setPagina(numero)
+                  }
+                >
+                  {numero}
+                </button>
+
+              ))}
+
+
+            <button
+              type="button"
+              disabled={
+                pagina >= totalPaginas ||
+                totalPaginas === 0
+              }
+              onClick={() =>
+                setPagina(
+                  (actual) =>
+                    Math.min(
+                      totalPaginas,
+                      actual + 1
+                    )
+                )
+              }
+            >
+
+              <FontAwesomeIcon
+                icon={faChevronRight}
+              />
+
+            </button>
+
+          </div>
+
+
+          <div className="page-size">
+
+            <span>
+              10 por página
+            </span>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+      {/* ==============================================
+          MODAL DE MESA
+      =============================================== */}
+
+      {mesaSeleccionada && (
+
+        <div
+          className="mesa-modal-overlay"
+          onClick={cerrarModal}
+        >
+
+          <div
+            className="mesa-modal"
+            onClick={(e) =>
+              e.stopPropagation()
+            }
+          >
+
+            <div className="mesa-modal-header">
+
+              <div>
+
+                <span>
+                  GESTIÓN DE MESA
+                </span>
+
+                <h2>
+                  Mesa #{mesaSeleccionada.numero}
+                </h2>
+
+                <p>
+                  {nombreSede(
+                    mesaSeleccionada.id_sede
+                  )}
+                  {" · "}
+                  {mesaSeleccionada.capacidad}
+                  {" personas"}
+                </p>
+
+              </div>
+
+
+              <button
+                type="button"
+                onClick={cerrarModal}
+              >
+
+                <FontAwesomeIcon
+                  icon={faXmark}
+                />
+
+              </button>
+
+            </div>
+
+
+            <div className="mesa-modal-body">
+
+              {pedidoActualMesa ? (
+
+                <>
+
+                  <div className="pedido-summary">
+
+                    <div>
+
+                      <span>
+                        Pedido actual
+                      </span>
+
+                      <strong>
+                        #{pedidoActualMesa.id}
+                      </strong>
+
+                    </div>
+
+                    <div>
+
+                      <span>
+                        Total
+                      </span>
+
+                      <strong>
+                        $
+                        {Number(
+                          pedidoActualMesa.total
+                        ).toLocaleString(
+                          "es-CO"
+                        )}
+                      </strong>
+
+                    </div>
+
+                  </div>
+
+
+                  <h3>
+                    Productos solicitados
+                  </h3>
+
+
+                  <div className="pedido-details">
+
+                    {pedidoActualMesa.detalles?.length >
+                    0 ? (
+
+                      pedidoActualMesa.detalles.map(
+                        (detalle) => (
+
+                          <div
+                            className="pedido-item"
+                            key={detalle.id}
+                          >
+
+                            <div>
+
+                              <strong>
+                                {nombreProducto(
+                                  detalle.id_producto
+                                )}
+                              </strong>
+
+                              <span>
+                                {detalle.cantidad}
+                                {" × "}
+                                $
+                                {Number(
+                                  detalle.precio_unitario
+                                ).toLocaleString(
+                                  "es-CO"
+                                )}
+                              </span>
+
+                            </div>
+
+
+                            <strong>
+
+                              $
+                              {Number(
+                                detalle.precio_unitario *
+                                detalle.cantidad
+                              ).toLocaleString(
+                                "es-CO"
+                              )}
+
+                            </strong>
+
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                quitarDetallePedido(
+                                  detalle.id
+                                )
+                              }
+                            >
+
+                              <FontAwesomeIcon
+                                icon={faTrash}
+                              />
+
+                            </button>
+
+                          </div>
+
+                        )
+                      )
+
+                    ) : (
+
+                      <p className="sin-productos">
+                        No hay productos registrados.
+                      </p>
+
+                    )}
+
+                  </div>
+
+
+                  <form
+                    className="pedido-form"
+                    onSubmit={agregarItemLocal}
+                  >
+
+                    <div>
+
+                      <label>
+                        Producto
+                      </label>
+
+                      <select
+                        value={
+                          idProductoActual
+                        }
+                        onChange={(e) =>
+                          setIdProductoActual(
+                            e.target.value === ""
+                              ? ""
+                              : Number(
+                                  e.target.value
+                                )
+                          )
+                        }
+                      >
+
+                        <option value="">
+                          Selecciona un producto
+                        </option>
+
+                        {productos.map(
+                          (producto) => (
+
+                            <option
+                              key={producto.id}
+                              value={producto.id}
+                            >
+
+                              {producto.nombre}
+                              {" - $"}
+                              {Number(
+                                producto.precio
+                              ).toLocaleString(
+                                "es-CO"
+                              )}
+
+                            </option>
+
+                          )
+                        )}
+
+                      </select>
+
+                    </div>
+
+
+                    <div>
+
+                      <label>
+                        Cantidad
+                      </label>
+
                       <input
                         type="number"
                         min="1"
-                        value={cantidadActual}
-                        onChange={(e) => setCantidadActual(e.target.value)}
+                        value={
+                          cantidadActual
+                        }
+                        onChange={(e) =>
+                          setCantidadActual(
+                            e.target.value
+                          )
+                        }
                       />
+
                     </div>
 
-                    <div className="form-actions form-full">
-                      <button type="submit" className="crear-producto-btn">
-                        + Agregar a la lista de adición
-                      </button>
-                    </div>
+
+                    <button
+                      type="submit"
+                      className="btn-add-product"
+                    >
+
+                      <FontAwesomeIcon
+                        icon={faPlus}
+                      />
+
+                      Agregar
+
+                    </button>
+
                   </form>
 
+
                   {itemsPedido.length > 0 && (
-                    <div style={{ marginBottom: "20px" }}>
-                      <h4 style={{ color: "#eee5da", fontSize: "14px" }}>Nuevos ítems por enviar:</h4>
-                      <ul style={{ color: "#34d399", paddingLeft: "20px", marginBottom: "15px" }}>
-                        {itemsPedido.map((i) => (
-                          <li key={i.id_producto}>
-                            {i.cantidad}x {nombreProducto(i.id_producto)}
+
+                    <div className="items-pendientes">
+
+                      <h3>
+                        Nuevos productos
+                      </h3>
+
+                      {itemsPedido.map(
+                        (item) => (
+
+                          <div
+                            className="pending-item"
+                            key={item.id_producto}
+                          >
+
+                            <span>
+                              {nombreProducto(
+                                item.id_producto
+                              )}
+                            </span>
+
+                            <strong>
+                              x{item.cantidad}
+                            </strong>
+
                             <button
                               type="button"
-                              onClick={() => removerItemLocal(i.id_producto)}
-                              style={{ background: "transparent", border: "none", color: "#ef4444", cursor: "pointer", marginLeft: "10px", fontSize: "12px" }}
+                              onClick={() =>
+                                removerItemLocal(
+                                  item.id_producto
+                                )
+                              }
                             >
-                              [Quitar]
+
+                              <FontAwesomeIcon
+                                icon={faXmark}
+                              />
+
                             </button>
-                          </li>
-                        ))}
-                      </ul>
+
+                          </div>
+
+                        )
+                      )}
+
+
+                      <div className="pending-total">
+
+                        <span>
+                          Total nuevos
+                        </span>
+
+                        <strong>
+                          $
+                          {calcularTotalLocal().toLocaleString(
+                            "es-CO"
+                          )}
+                        </strong>
+
+                      </div>
+
+
                       <button
                         type="button"
-                        onClick={agregarProductosAPedidoExistente}
+                        className="btn-confirm-order"
+                        onClick={
+                          agregarProductosAPedidoExistente
+                        }
                         disabled={loading}
-                        className="crear-producto-btn"
-                        style={{ marginBottom: "15px" }}
                       >
-                        {loading ? "Actualizando..." : "Confirmar y Enviar Nuevos Productos"}
+
+                        Agregar al pedido
+
                       </button>
+
                     </div>
+
                   )}
 
-                  <div style={{ display: "flex", gap: "10px", borderTop: "1px solid #30251e", paddingTop: "15px" }}>
-                    <button
-                      type="button"
-                      onClick={() => cancelarPedidoActual(pedidoActualMesa.id)}
-                      disabled={loading}
-                      style={{
-                        backgroundColor: "#ef4444",
-                        color: "#fff",
-                        border: "none",
-                        padding: "10px 20px",
-                        borderRadius: "6px",
-                        cursor: "pointer",
-                        fontWeight: "600",
-                        fontSize: "13px",
-                      }}
-                    >
-                      {loading ? "Procesando..." : "Cancelar Pedido Completo"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setMesaSeleccionada(null)}
-                      style={{
-                        background: "#374151",
-                        color: "#fff",
-                        border: "none",
-                        padding: "10px 20px",
-                        borderRadius: "6px",
-                        cursor: "pointer",
-                        fontWeight: "600",
-                        fontSize: "13px",
-                      }}
-                    >
-                      Cerrar ventana
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <p style={{ color: "#bcae9e", fontStyle: "italic" }}>Cargando información del pedido...</p>
-              )}
-            </div>
-          ) : (
-            /* SI LA MESA ESTÁ LIBRE, CREAR PEDIDO NUEVO */
-            <div>
-              <form onSubmit={agregarItemLocal} className="producto-form" style={{ marginBottom: "20px" }}>
-                <div className="form-group">
-                  <label>Producto</label>
-                  <select
-                    value={idProductoActual}
-                    onChange={(e) => setIdProductoActual(e.target.value === "" ? "" : Number(e.target.value))}
-                    required
+
+                  <button
+                    type="button"
+                    className="btn-cancel-order"
+                    onClick={() =>
+                      cancelarPedidoActual(
+                        pedidoActualMesa.id
+                      )
+                    }
                   >
-                    <option value="">Selecciona un producto</option>
-                    {productos.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.nombre} (${p.precio})
-                      </option>
-                    ))}
-                  </select>
-                </div>
 
-                <div className="form-group">
-                  <label>Cantidad</label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={cantidadActual}
-                    onChange={(e) => setCantidadActual(e.target.value)}
-                    required
-                  />
-                </div>
+                    Cancelar pedido
 
-                <div className="form-actions form-full">
-                  <button type="submit" className="crear-producto-btn">
-                    + Añadir al pedido
                   </button>
-                </div>
-              </form>
 
-              {itemsPedido.length > 0 ? (
-                <div>
-                  <h3 style={{ color: "#eee5da", fontSize: "15px", marginBottom: "10px" }}>Productos en la orden:</h3>
-                  <div className="productos-table-wrapper">
-                    <table className="productos-table">
-                      <thead>
-                        <tr>
-                          <th>Producto</th>
-                          <th>Cantidad</th>
-                          <th>Precio Unit.</th>
-                          <th>Subtotal</th>
-                          <th>Acción</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {itemsPedido.map((item) => (
-                          <tr key={item.id_producto}>
-                            <td>{nombreProducto(item.id_producto)}</td>
-                            <td>{item.cantidad}</td>
-                            <td>${precioProducto(item.id_producto)}</td>
-                            <td style={{ fontWeight: "bold", color: "#34d399" }}>
-                              ${precioProducto(item.id_producto) * item.cantidad}
-                            </td>
-                            <td>
-                              <button
-                                type="button"
-                                onClick={() => removerItemLocal(item.id_producto)}
-                                style={{
-                                  backgroundColor: "#ef4444",
-                                  color: "#fff",
-                                  border: "none",
-                                  padding: "4px 10px",
-                                  borderRadius: "4px",
-                                  cursor: "pointer",
-                                  fontSize: "12px",
-                                }}
-                              >
-                                Quitar
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                </>
 
-                  <div style={{ marginTop: "15px", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#19130f", padding: "15px", borderRadius: "8px", border: "1px solid #30251e" }}>
-                    <span style={{ fontSize: "16px", fontWeight: "bold", color: "#eee5da" }}>
-                      Total a pagar: <span style={{ color: "#34d399" }}>${calcularTotalLocal()}</span>
-                    </span>
-                    
-                    <div style={{ display: "flex", gap: "10px" }}>
-                      <button
-                        type="button"
-                        onClick={confirmarNuevoPedido}
-                        disabled={loading}
-                        className="crear-producto-btn"
-                        style={{ padding: "10px 20px" }}
-                      >
-                        {loading ? "Enviando..." : "Confirmar y Enviar Pedido"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setMesaSeleccionada(null)}
-                        style={{
-                          background: "#374151",
-                          color: "#fff",
-                          border: "none",
-                          padding: "10px 16px",
-                          borderRadius: "6px",
-                          cursor: "pointer",
-                          fontWeight: "600",
-                        }}
-                      >
-                        Cancelar
-                      </button>
-                    </div>
-                  </div>
-                </div>
               ) : (
-                <p style={{ color: "#bcae9e", fontStyle: "italic", textAlign: "center" }}>
-                  Aún no has agregado productos a esta mesa.
-                </p>
+
+                <>
+
+                  <div className="mesa-disponible">
+
+                    <div>
+                      ✓
+                    </div>
+
+                    <h3>
+                      Mesa disponible
+                    </h3>
+
+                    <p>
+                      Agrega los productos
+                      para registrar un nuevo pedido.
+                    </p>
+
+                  </div>
+
+
+                  <form
+                    className="pedido-form pedido-form-new"
+                    onSubmit={agregarItemLocal}
+                  >
+
+                    <div>
+
+                      <label>
+                        Producto
+                      </label>
+
+                      <select
+                        value={
+                          idProductoActual
+                        }
+                        onChange={(e) =>
+                          setIdProductoActual(
+                            e.target.value === ""
+                              ? ""
+                              : Number(
+                                  e.target.value
+                                )
+                          )
+                        }
+                        required
+                      >
+
+                        <option value="">
+                          Selecciona un producto
+                        </option>
+
+                        {productos.map(
+                          (producto) => (
+
+                            <option
+                              key={producto.id}
+                              value={producto.id}
+                            >
+
+                              {producto.nombre}
+                              {" - $"}
+                              {Number(
+                                producto.precio
+                              ).toLocaleString(
+                                "es-CO"
+                              )}
+
+                            </option>
+
+                          )
+                        )}
+
+                      </select>
+
+                    </div>
+
+
+                    <div>
+
+                      <label>
+                        Cantidad
+                      </label>
+
+                      <input
+                        type="number"
+                        min="1"
+                        value={
+                          cantidadActual
+                        }
+                        onChange={(e) =>
+                          setCantidadActual(
+                            e.target.value
+                          )
+                        }
+                      />
+
+                    </div>
+
+
+                    <button
+                      type="submit"
+                      className="btn-add-product"
+                    >
+
+                      <FontAwesomeIcon
+                        icon={faPlus}
+                      />
+
+                      Agregar
+
+                    </button>
+
+                  </form>
+
+
+                  {itemsPedido.length > 0 && (
+
+                    <div className="items-pendientes">
+
+                      <h3>
+                        Productos del pedido
+                      </h3>
+
+                      {itemsPedido.map(
+                        (item) => (
+
+                          <div
+                            className="pending-item"
+                            key={item.id_producto}
+                          >
+
+                            <span>
+                              {nombreProducto(
+                                item.id_producto
+                              )}
+                            </span>
+
+                            <strong>
+                              x{item.cantidad}
+                            </strong>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                removerItemLocal(
+                                  item.id_producto
+                                )
+                              }
+                            >
+
+                              <FontAwesomeIcon
+                                icon={faXmark}
+                              />
+
+                            </button>
+
+                          </div>
+
+                        )
+                      )}
+
+
+                      <div className="pending-total">
+
+                        <span>
+                          Total
+                        </span>
+
+                        <strong>
+                          $
+                          {calcularTotalLocal().toLocaleString(
+                            "es-CO"
+                          )}
+                        </strong>
+
+                      </div>
+
+
+                      <button
+                        type="button"
+                        className="btn-confirm-order"
+                        onClick={
+                          confirmarNuevoPedido
+                        }
+                        disabled={loading}
+                      >
+
+                        Registrar pedido
+
+                      </button>
+
+                    </div>
+
+                  )}
+
+                </>
+
               )}
+
             </div>
-          )}
-        </section>
+
+          </div>
+
+        </div>
+
       )}
+
     </div>
   );
 }

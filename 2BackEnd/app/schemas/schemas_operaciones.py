@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import List, Optional
 from datetime import datetime, date
 from decimal import Decimal
@@ -14,8 +14,11 @@ class MesaBase(BaseModel):
     id_sede: int
 
 
-class MesaCreate(MesaBase):
-    pass
+class MesaCreate(BaseModel):
+    numero: int
+    capacidad: int
+    id_sede: int
+    estado: str
 
 
 class MesaResponse(MesaBase):
@@ -25,6 +28,13 @@ class MesaResponse(MesaBase):
     class Config:
         from_attributes = True
 
+class MesaUpdate(BaseModel):
+    numero: int
+    capacidad: int
+    id_sede: int
+    estado: str
+
+    model_config = ConfigDict(from_attributes=True)
 
 # =========================================================
 # PRODUCTOS

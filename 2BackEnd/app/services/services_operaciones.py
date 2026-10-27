@@ -18,6 +18,7 @@ from app.models.models_operaciones import (
 
 from app.schemas.schemas_operaciones import (
     MesaCreate,
+    MesaUpdate,
     ProductoCreate,
     InventarioCreate,
     PedidoCreate,
@@ -112,12 +113,15 @@ def create_mesa(db: Session, mesa: MesaCreate):
     return db_mesa
 
 
+
 def actualizar_mesa(
     db: Session,
     id_mesa: int,
-    mesa_data: MesaCreate
+    mesa_data: MesaUpdate
 ):
 
+    print("Estado recibido por el backend:", mesa_data.estado)
+    
     mesa = (
         db.query(Mesa)
         .filter(Mesa.id == id_mesa)
@@ -130,8 +134,8 @@ def actualizar_mesa(
             detail="Mesa no encontrada"
         )
 
-    # Comprobar duplicado solamente si
-    # número/sede coinciden con OTRA mesa
+    # Comprobar que no exista otra mesa con el mismo
+    # número en la misma sede.
     mesa_existente = (
         db.query(Mesa)
         .filter(
@@ -151,9 +155,11 @@ def actualizar_mesa(
             )
         )
 
+    # Actualizar todos los campos, incluido el estado.
     mesa.numero = mesa_data.numero
     mesa.capacidad = mesa_data.capacidad
     mesa.id_sede = mesa_data.id_sede
+    mesa.estado = mesa_data.estado
 
     try:
         db.commit()
@@ -171,6 +177,7 @@ def actualizar_mesa(
         )
 
     return mesa
+
 
 
 def eliminar_mesa(

@@ -1,5 +1,7 @@
+
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import "@fortawesome/fontawesome-free/css/all.min.css";
 
 import api from "../api/axios";
 
@@ -15,10 +17,10 @@ import "./Login.css";
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-
+  const [mostrarPassword, setMostrarPassword] = useState(false);
+  
   const navigate = useNavigate();
 
   const handleLogin = async (
@@ -30,21 +32,13 @@ export default function Login() {
     setLoading(true);
 
     try {
-      // 1. Enviar correo y contraseña al backend
       const response = await api.post("/auth/login", {
         email,
         password,
       });
 
-      console.log(
-        "Respuesta completa del backend:",
-        response.data
-      );
-
-      // 2. Obtener el token
       const token =
-        response.data.access_token ||
-        response.data.token;
+        response.data.access_token || response.data.token;
 
       if (!token) {
         throw new Error(
@@ -52,15 +46,9 @@ export default function Login() {
         );
       }
 
-      console.log("Token recibido:", token);
-
-      // 3. Guardar token
       localStorage.setItem("token", token);
 
-      // 4. Leer información del JWT
       const payload = parseJwt(token);
-
-      console.log("Payload del JWT:", payload);
 
       if (!payload) {
         throw new Error(
@@ -68,45 +56,30 @@ export default function Login() {
         );
       }
 
-      // 5. Obtener ID del rol estrictamente como número entero
       const rol = Number(payload.role);
 
-      console.log("ID del rol numérico:", rol);
-
-      if (isNaN(rol)) {
-        throw new Error("El rol obtenido del token no es un número válido.");
+      if (Number.isNaN(rol)) {
+        throw new Error(
+          "El rol obtenido del token no es un número válido."
+        );
       }
 
-      // 6. Redireccionar dependiendo del rol numérico
       if (rol === ROL_ADMINISTRADOR) {
-        console.log("Usuario administrador");
         navigate("/admin");
       } else if (rol === ROL_MESERO) {
-        console.log("Usuario mesero");
         navigate("/mesas");
       } else if (rol === ROL_CAJERO) {
-        console.log("Usuario cajero");
         navigate("/caja");
       } else {
-        console.warn(
-          "ID de rol numérico desconocido:",
-          rol
-        );
-
-        setError(
-          `Rol desconocido: ${rol}`
-        );
+        setError(`Rol desconocido: ${rol}`);
       }
     } catch (err: any) {
-      console.error(
-        "Error en el login:",
-        err
-      );
+      console.error("Error en el login:", err);
 
       setError(
         err?.response?.data?.detail ||
           err?.message ||
-          "Correo o contraseña incorrectos"
+          "Correo o contraseña incorrectos."
       );
     } finally {
       setLoading(false);
@@ -114,172 +87,154 @@ export default function Login() {
   };
 
   return (
-    <div className="login-page">
+    <main className="login-page">
+      <section className="login-brand">
+        <div className="login-brand__overlay" />
 
-      <div className="login-card">
+        <div className="login-brand__content">
+          <img
+            src="/logo-pola-y-punto.svg"
+            alt="Bar Pola y Punto"
+            className="login-brand__logo"
+          />
 
-        <div
-          className="login-card__rail"
-          aria-hidden="true"
-        />
+          <div className="login-brand__message">
+            <h2>
+              Buenas bebidas,
+              <br />
+              mejores momentos
+            </h2>
+          </div>
 
-        <div className="login-card__header">
+          <div
+            className="login-brand__glass"
+            aria-hidden="true"
+          />
+        </div>
+      </section>
 
-          <svg
-            className="login-glass"
-            viewBox="0 0 32 32"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
+      <section className="login-panel">
+        <div className="login-panel__content">
+          <div
+            className="login-decoration login-decoration--top"
             aria-hidden="true"
           >
-            <path
-              d="M7 5H25L18 17.5V26H14V17.5L7 5Z"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinejoin="round"
-            />
-
-            <path
-              d="M12 26H20"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-            />
-
-            <path
-              d="M9.5 8.5H22.5"
-              stroke="currentColor"
-              strokeWidth="1.2"
-              strokeLinecap="round"
-              opacity="0.6"
-            />
-          </svg>
-
-          <h1 className="login-title">
-            Bar Pola y Punto
-          </h1>
-
-          <p className="login-subtitle">
-            Panel de acceso
-          </p>
-
-        </div>
-
-        {error && (
-          <div
-            className="login-error"
-            role="alert"
-          >
-
-            <svg
-              className="login-error__icon"
-              viewBox="0 0 20 20"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              aria-hidden="true"
-            >
-
-              <circle
-                cx="10"
-                cy="10"
-                r="8"
-                stroke="currentColor"
-                strokeWidth="1.4"
-              />
-
-              <path
-                d="M10 6.5V10.5"
-                stroke="currentColor"
-                strokeWidth="1.4"
-                strokeLinecap="round"
-              />
-
-              <circle
-                cx="10"
-                cy="13.3"
-                r="0.9"
-                fill="currentColor"
-              />
-
-            </svg>
-
-            <span>
-              {error}
-            </span>
-
-          </div>
-        )}
-
-        <form
-          className="login-form"
-          onSubmit={handleLogin}
-        >
-
-          <div className="login-field">
-
-            <label htmlFor="email">
-              Correo electrónico
-            </label>
-
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) =>
-                setEmail(e.target.value)
-              }
-              required
-              autoComplete="email"
-              placeholder="tucorreo@barpolaypunto.com"
-            />
-
+            ✧
           </div>
 
-          <div className="login-field">
+          <header className="login-header">
+            <h1>Bar Pola y Punto</h1>
+            <p>Panel de acceso</p>
+            <span className="login-header__line" />
+          </header>
 
-            <label htmlFor="password">
-              Contraseña
-            </label>
+          {error && (
+            <div className="login-error" role="alert">
+              <span className="login-error__icon">!</span>
+              <span>{error}</span>
+            </div>
+          )}
 
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) =>
-                setPassword(e.target.value)
-              }
-              required
-              autoComplete="current-password"
-              placeholder="••••••••"
-            />
+          <form className="login-form" onSubmit={handleLogin}>
+            <div className="login-field">
+              <label htmlFor="email">
+                Correo electrónico
+              </label>
 
-          </div>
-
-          <button
-            type="submit"
-            className="login-button"
-            disabled={loading}
-          >
-
-            {loading ? (
-              <>
+              <div className="login-input">
                 <span
-                  className="login-spinner"
+                  className="login-input__icon"
                   aria-hidden="true"
+                >
+                  <i className="fa-regular fa-envelope" />
+                </span>
+
+                <input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  autoComplete="email"
+                  placeholder="tu.correo@barpolaypunto.com"
+                />
+              </div>
+            </div>
+
+            <div className="login-field">
+              <label htmlFor="password">Contraseña</label>
+
+              <div className="login-input">
+                <span
+                  className="login-input__icon"
+                  aria-hidden="true"
+                >
+                  <i className="fa-solid fa-lock" />
+                </span>
+
+                <input
+                  id="password"
+                  type={mostrarPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  autoComplete="current-password"
+                  placeholder="••••••••"
                 />
 
-                Entrando…
-              </>
-            ) : (
-              "Entrar"
-            )}
+                <button
+                  type="button"
+                  className="login-password-toggle"
+                  onClick={() =>
+                    setMostrarPassword((value) => !value)
+                  }
+                  aria-label={
+                    mostrarPassword
+                      ? "Ocultar contraseña"
+                      : "Mostrar contraseña"
+                  }
+                >
+                  <i
+                    className={
+                      mostrarPassword
+                        ? "fa-regular fa-eye-slash"
+                        : "fa-regular fa-eye"
+                    }
+                  />
+                </button>
+              </div>
+            </div>
 
-          </button>
+          
 
-        </form>
+            <button
+              type="submit"
+              className="login-button"
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <span className="login-spinner" />
+                  Entrando...
+                </>
+              ) : (
+                <>
+                  Entrar
+                  <span className="login-button__arrow">
+                    →
+                  </span>
+                </>
+              )}
+            </button>
+          </form>
 
-      </div>
-
-    </div>
+          <footer className="login-footer">
+            <span />
+            <small>Bar Pola y Punto</small>
+            <span />
+          </footer>
+        </div>
+      </section>
+    </main>
   );
 }
