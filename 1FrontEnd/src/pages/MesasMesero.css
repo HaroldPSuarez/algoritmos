@@ -1,0 +1,1162 @@
+
+:root {
+  --mm-bg: #f7f0e5;
+  --mm-card: #fffdf8;
+  --mm-brown: #291b11;
+  --mm-brown-soft: #60432d;
+  --mm-gold: #b77932;
+  --mm-gold-light: #f3e5ca;
+  --mm-border: #e7d5bd;
+  --mm-muted: #8b7968;
+  --mm-green: #218653;
+  --mm-green-bg: #e7f4e8;
+  --mm-red: #b83d35;
+  --mm-red-bg: #fae9e5;
+}
+
+.mesero-page {
+  width: 100%;
+  min-height: 100%;
+  padding: 30px;
+  background: var(--mm-bg);
+  color: var(--mm-brown);
+  font-family: "Segoe UI", Arial, sans-serif;
+}
+
+.mesero-page *,
+.mesero-page *::before,
+.mesero-page *::after {
+  box-sizing: border-box;
+}
+
+.mesero-page button,
+.mesero-page input,
+.mesero-page select {
+  font: inherit;
+}
+
+.mesero-page button {
+  cursor: pointer;
+}
+
+.mesero-page button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+/* Encabezado */
+
+.mesero-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+  margin-bottom: 28px;
+}
+
+.mesero-eyebrow {
+  display: block;
+  margin-bottom: 9px;
+  color: #985b20;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 2px;
+}
+
+.mesero-header h1 {
+  margin: 0;
+  color: var(--mm-brown);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(27px, 3vw, 37px);
+  font-weight: 700;
+  letter-spacing: -0.8px;
+}
+
+.mesero-header p {
+  margin: 10px 0 0;
+  color: var(--mm-brown-soft);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.mesero-counter {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 17px 21px;
+  background: var(--mm-gold-light);
+  border: 1px solid var(--mm-border);
+  border-radius: 13px;
+  white-space: nowrap;
+}
+
+.mesero-counter strong {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 27px;
+}
+
+.mesero-counter span {
+  color: var(--mm-brown-soft);
+  font-size: 11px;
+}
+
+/* Mensajes */
+
+.mesero-alert {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+  padding: 13px 16px;
+  border: 1px solid;
+  border-radius: 11px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.mesero-alert-error {
+  color: #a32d2b;
+  background: #fff0ed;
+  border-color: #f0c9c1;
+}
+
+.mesero-alert-success {
+  color: #176b40;
+  background: #eaf6e9;
+  border-color: #c6e5c7;
+}
+
+.mesero-alert button {
+  display: grid;
+  flex: 0 0 30px;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  border-radius: 7px;
+}
+
+/* Estadísticas */
+
+.mesero-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 17px;
+  margin-bottom: 25px;
+}
+
+.mesero-stat {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  min-width: 0;
+  padding: 21px;
+  background: var(--mm-card);
+  border: 1px solid var(--mm-border);
+  border-radius: 15px;
+  box-shadow: 0 5px 16px rgba(62, 39, 20, 0.035);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.mesero-stat:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(62, 39, 20, 0.07);
+}
+
+.mesero-stat-icon {
+  display: grid;
+  flex: 0 0 46px;
+  width: 46px;
+  height: 46px;
+  place-items: center;
+  color: var(--mm-brown-soft);
+  background: #f4e8d5;
+  border-radius: 12px;
+  font-size: 17px;
+}
+
+.mesero-stat .icon-green {
+  color: var(--mm-green);
+  background: var(--mm-green-bg);
+}
+
+.mesero-stat .icon-red {
+  color: var(--mm-red);
+  background: var(--mm-red-bg);
+}
+
+.mesero-stat .icon-gold {
+  color: #9a641f;
+  background: #fbefd8;
+}
+
+.mesero-stat > div:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+}
+
+.mesero-stat > div:last-child span {
+  color: var(--mm-muted);
+  font-size: 12px;
+}
+
+.mesero-stat strong {
+  color: var(--mm-brown);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 28px;
+  line-height: 1;
+}
+
+.mesero-dot {
+  width: 11px;
+  height: 11px;
+  background: currentColor;
+  border-radius: 50%;
+  box-shadow: 0 0 0 5px rgba(33, 134, 83, 0.1);
+}
+
+.icon-red .mesero-dot {
+  box-shadow: 0 0 0 5px rgba(184, 61, 53, 0.1);
+}
+
+/* Filtros */
+
+.mesero-toolbar {
+  display: flex;
+  align-items: flex-end;
+  gap: 15px;
+  margin-bottom: 26px;
+  padding: 19px;
+  background: var(--mm-brown);
+  border: 1px solid #3d2a1b;
+  border-radius: 13px;
+  box-shadow: 0 5px 12px rgba(41, 27, 17, 0.08);
+}
+
+.mesero-field {
+  display: flex;
+  flex: 0 1 260px;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 190px;
+}
+
+.mesero-field label,
+.mesero-product-form label {
+  color: var(--mm-card);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.mesero-field select,
+.mesero-search input {
+  width: 100%;
+  min-width: 0;
+  height: 44px;
+  padding: 0 13px;
+  color: var(--mm-brown);
+  background: var(--mm-card);
+  border: 1px solid var(--mm-border);
+  border-radius: 8px;
+  outline: none;
+}
+
+.mesero-search {
+  position: relative;
+  display: flex;
+  flex: 1 1 260px;
+  align-items: center;
+  min-width: 180px;
+}
+
+.mesero-search > svg {
+  position: absolute;
+  left: 14px;
+  color: var(--mm-muted);
+  font-size: 13px;
+  pointer-events: none;
+}
+
+.mesero-search input {
+  padding-left: 39px;
+}
+
+.mesero-field select:focus,
+.mesero-search input:focus,
+.mesero-product-form select:focus,
+.mesero-product-form input:focus {
+  border-color: var(--mm-gold);
+  box-shadow: 0 0 0 3px rgba(183, 121, 50, 0.13);
+}
+
+.mesero-refresh {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 44px;
+  padding: 0 17px;
+  color: white;
+  background: var(--mm-gold);
+  border: 1px solid var(--mm-gold);
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  transition: background 0.2s;
+}
+
+.mesero-refresh:hover {
+  background: #9c6227;
+}
+
+/* Sección de mesas */
+
+.mesero-list-section {
+  padding: 23px;
+  background: var(--mm-card);
+  border: 1px solid var(--mm-border);
+  border-radius: 16px;
+  box-shadow: 0 6px 20px rgba(62, 39, 20, 0.04);
+}
+
+.mesero-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  margin-bottom: 22px;
+}
+
+.mesero-section-heading h2 {
+  margin: 0;
+  color: var(--mm-brown);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 22px;
+}
+
+.mesero-section-heading p {
+  margin: 8px 0 0;
+  color: var(--mm-muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.mesero-result-count {
+  padding: 8px 12px;
+  color: var(--mm-brown-soft);
+  background: #f5ead9;
+  border: 1px solid var(--mm-border);
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* Tarjetas de mesas */
+
+.mesero-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.mesero-mesa-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 20px;
+  background: #fffaf2;
+  border: 1px solid var(--mm-border);
+  border-radius: 14px;
+  transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+
+.mesero-mesa-card:hover {
+  transform: translateY(-3px);
+  border-color: #d4b17e;
+  box-shadow: 0 10px 24px rgba(62, 39, 20, 0.08);
+}
+
+.mesero-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 17px;
+}
+
+.mesero-table-number {
+  display: grid;
+  flex: 0 0 51px;
+  width: 51px;
+  height: 51px;
+  place-items: center;
+  color: var(--mm-brown);
+  background: var(--mm-gold-light);
+  border: 1px solid #e6c995;
+  border-radius: 13px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.mesero-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 10px;
+  border: 1px solid transparent;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.mesero-status > span {
+  width: 7px;
+  height: 7px;
+  background: currentColor;
+  border-radius: 50%;
+}
+
+.mesero-status.is-available {
+  color: #187346;
+  background: var(--mm-green-bg);
+  border-color: #cce5d0;
+}
+
+.mesero-status.is-occupied {
+  color: var(--mm-red);
+  background: var(--mm-red-bg);
+  border-color: #efcfca;
+}
+
+.mesero-card-title {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 17px;
+}
+
+.mesero-card-title h3 {
+  margin: 0;
+  color: var(--mm-brown);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 19px;
+}
+
+.mesero-card-title > span {
+  color: #a18b76;
+  font-size: 10px;
+}
+
+.mesero-card-details {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  margin-bottom: 17px;
+  padding: 15px 0;
+  border-top: 1px solid #eddfca;
+  border-bottom: 1px solid #eddfca;
+}
+
+.mesero-card-details > div {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  color: var(--mm-brown-soft);
+  font-size: 12px;
+}
+
+.mesero-card-details svg {
+  flex: 0 0 14px;
+  color: var(--mm-gold);
+  font-size: 12px;
+}
+
+.mesero-card-details span {
+  overflow-wrap: anywhere;
+}
+
+.mesero-order-indicator {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 15px;
+  padding: 11px;
+  color: var(--mm-brown-soft);
+  background: #f5ead9;
+  border: 1px solid #ead6b5;
+  border-radius: 9px;
+  font-size: 11px;
+}
+
+.mesero-order-indicator svg {
+  color: var(--mm-gold);
+}
+
+.mesero-order-indicator strong {
+  margin-left: auto;
+  color: var(--mm-brown);
+}
+
+.mesero-open-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  width: 100%;
+  min-height: 43px;
+  margin-top: auto;
+  padding: 10px 14px;
+  color: white;
+  background: var(--mm-brown);
+  border: 1px solid var(--mm-brown);
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 700;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.mesero-open-button:hover {
+  background: var(--mm-gold);
+  border-color: var(--mm-gold);
+}
+
+/* Sin resultados */
+
+.mesero-empty {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  gap: 10px;
+  padding: 55px 20px;
+  color: var(--mm-muted);
+  text-align: center;
+}
+
+.mesero-empty > svg {
+  color: var(--mm-gold);
+  font-size: 25px;
+}
+
+.mesero-empty-icon {
+  display: grid;
+  width: 58px;
+  height: 58px;
+  place-items: center;
+  color: var(--mm-gold);
+  background: var(--mm-gold-light);
+  border-radius: 16px;
+  font-size: 23px;
+}
+
+.mesero-empty h3 {
+  margin: 3px 0 0;
+  color: var(--mm-brown);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 18px;
+}
+
+.mesero-empty p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+/* Paginación */
+
+.mesero-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  margin-top: 22px;
+  padding-top: 17px;
+  border-top: 1px solid var(--mm-border);
+}
+
+.mesero-pagination > span,
+.mesero-pagination > div > span {
+  color: var(--mm-muted);
+  font-size: 11px;
+}
+
+.mesero-pagination > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mesero-pagination button {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  color: var(--mm-brown);
+  background: white;
+  border: 1px solid var(--mm-border);
+  border-radius: 8px;
+}
+
+.mesero-pagination button:not(:disabled):hover {
+  color: white;
+  background: var(--mm-gold);
+  border-color: var(--mm-gold);
+}
+
+.mesero-pagination button:disabled {
+  opacity: 0.4;
+}
+
+/* Modal */
+
+.mesero-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow-y: auto;
+  padding: 22px;
+  background: rgba(35, 23, 14, 0.64);
+  backdrop-filter: blur(4px);
+  animation: mm-fade-in 0.18s ease;
+}
+
+.mesero-modal {
+  width: min(100%, 680px);
+  max-height: 90vh;
+  overflow-y: auto;
+  background: var(--mm-card);
+  border: 1px solid var(--mm-border);
+  border-radius: 18px;
+  box-shadow: 0 25px 75px rgba(0, 0, 0, 0.24);
+  animation: mm-slide-in 0.2s ease;
+}
+
+.mesero-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 24px 26px;
+  background: #f4e7d2;
+  border-bottom: 1px solid var(--mm-border);
+}
+
+.mesero-modal-header > div > span {
+  color: #985b20;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.6px;
+}
+
+.mesero-modal-header h2 {
+  margin: 9px 0 7px;
+  color: var(--mm-brown);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 25px;
+}
+
+.mesero-modal-header p {
+  margin: 0;
+  color: var(--mm-muted);
+  font-size: 12px;
+}
+
+.mesero-modal-header > button {
+  display: grid;
+  flex: 0 0 36px;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  color: var(--mm-brown);
+  background: var(--mm-card);
+  border: 1px solid var(--mm-border);
+  border-radius: 9px;
+}
+
+.mesero-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 19px;
+  padding: 24px 26px 27px;
+}
+
+.mesero-modal-body h3 {
+  margin: 0;
+  color: var(--mm-brown);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 16px;
+}
+
+/* Resumen y detalles del pedido */
+
+.mesero-order-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 13px;
+}
+
+.mesero-order-summary > div {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  background: #f8efdf;
+  border: 1px solid var(--mm-border);
+  border-radius: 11px;
+}
+
+.mesero-order-summary span {
+  color: var(--mm-muted);
+  font-size: 11px;
+}
+
+.mesero-order-summary strong {
+  color: var(--mm-brown);
+  font-size: 21px;
+}
+
+.mesero-order-details {
+  overflow: hidden;
+  border: 1px solid var(--mm-border);
+  border-radius: 11px;
+}
+
+.mesero-order-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 34px;
+  align-items: center;
+  gap: 12px;
+  padding: 13px;
+  border-bottom: 1px solid #eee4d6;
+}
+
+.mesero-order-item:last-child {
+  border-bottom: 0;
+}
+
+.mesero-order-item > div {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.mesero-order-item > div strong {
+  overflow-wrap: anywhere;
+  color: var(--mm-brown);
+  font-size: 12px;
+}
+
+.mesero-order-item > div span {
+  color: var(--mm-muted);
+  font-size: 11px;
+}
+
+.mesero-order-item > strong {
+  color: var(--mm-brown);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.mesero-order-item > button,
+.mesero-pending-item > button {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  color: var(--mm-red);
+  background: var(--mm-red-bg);
+  border: 1px solid #efcfca;
+  border-radius: 8px;
+}
+
+.mesero-no-items {
+  padding: 17px;
+  color: var(--mm-muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+/* Formulario de productos */
+
+.mesero-product-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 100px auto;
+  align-items: end;
+  gap: 12px;
+}
+
+.mesero-product-form > div {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.mesero-product-form label {
+  color: var(--mm-brown-soft);
+  font-size: 11px;
+}
+
+.mesero-product-form select,
+.mesero-product-form input {
+  width: 100%;
+  min-width: 0;
+  height: 43px;
+  padding: 0 11px;
+  color: var(--mm-brown);
+  background: white;
+  border: 1px solid var(--mm-border);
+  border-radius: 8px;
+  outline: none;
+  font-size: 12px;
+}
+
+.mesero-add-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 43px;
+  padding: 0 14px;
+  color: white;
+  background: var(--mm-gold);
+  border: 1px solid var(--mm-gold);
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.mesero-add-button:hover {
+  background: #9c6227;
+}
+
+/* Productos pendientes */
+
+.mesero-pending {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: #fff8eb;
+  border: 1px solid #ead6b5;
+  border-radius: 12px;
+}
+
+.mesero-pending-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 32px;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eddfca;
+}
+
+.mesero-pending-item > span {
+  overflow-wrap: anywhere;
+  color: var(--mm-brown-soft);
+  font-size: 12px;
+}
+
+.mesero-pending-item > strong {
+  color: var(--mm-brown);
+  font-size: 12px;
+}
+
+.mesero-pending-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.mesero-pending-total span {
+  color: var(--mm-muted);
+  font-size: 12px;
+}
+
+.mesero-pending-total strong {
+  color: var(--mm-brown);
+  font-size: 20px;
+}
+
+.mesero-confirm-button {
+  min-height: 44px;
+  padding: 11px 15px;
+  color: white;
+  background: var(--mm-green);
+  border: 1px solid var(--mm-green);
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.mesero-confirm-button:hover {
+  background: #176b40;
+}
+
+.mesero-cancel-order {
+  align-self: flex-start;
+  min-height: 39px;
+  padding: 9px 13px;
+  color: var(--mm-red);
+  background: white;
+  border: 1px solid #e9c9c4;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.mesero-cancel-order:hover {
+  background: var(--mm-red-bg);
+}
+
+/* Mesa disponible */
+
+.mesero-available-message {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  gap: 9px;
+  padding: 23px 16px;
+  background: #edf6e9;
+  border: 1px solid #d0e4c7;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.mesero-available-message > span {
+  display: grid;
+  width: 46px;
+  height: 46px;
+  place-items: center;
+  color: white;
+  background: var(--mm-green);
+  border-radius: 50%;
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.mesero-available-message h3 {
+  color: #23663b;
+  font-size: 17px;
+}
+
+.mesero-available-message p {
+  max-width: 350px;
+  margin: 0;
+  color: #648065;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+/* Animaciones */
+
+@keyframes mm-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes mm-slide-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Responsive */
+
+@media (max-width: 1100px) {
+  .mesero-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .mesero-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .mesero-toolbar {
+    flex-wrap: wrap;
+  }
+
+  .mesero-field {
+    flex: 1 1 220px;
+  }
+
+  .mesero-search {
+    flex: 1 1 240px;
+  }
+}
+
+@media (max-width: 700px) {
+  .mesero-page {
+    padding: 16px;
+  }
+
+  .mesero-header {
+    align-items: flex-start;
+    flex-direction: column;
+    margin-bottom: 21px;
+  }
+
+  .mesero-counter {
+    width: 100%;
+  }
+
+  .mesero-stats {
+    gap: 10px;
+  }
+
+  .mesero-stat {
+    gap: 10px;
+    padding: 13px;
+  }
+
+  .mesero-stat-icon {
+    flex-basis: 37px;
+    width: 37px;
+    height: 37px;
+    font-size: 14px;
+  }
+
+  .mesero-stat strong {
+    font-size: 23px;
+  }
+
+  .mesero-stat > div:last-child span {
+    font-size: 10px;
+  }
+
+  .mesero-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 13px;
+    padding: 15px;
+  }
+
+  .mesero-field,
+  .mesero-search {
+    flex: auto;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .mesero-refresh {
+    width: 100%;
+  }
+
+  .mesero-list-section {
+    padding: 15px;
+  }
+
+  .mesero-section-heading {
+    align-items: flex-start;
+  }
+
+  .mesero-section-heading h2 {
+    font-size: 19px;
+  }
+
+  .mesero-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 13px;
+  }
+
+  .mesero-mesa-card {
+    padding: 17px;
+  }
+
+  .mesero-pagination {
+    align-items: center;
+    flex-direction: column;
+  }
+
+  .mesero-modal-overlay {
+    align-items: flex-start;
+    padding: 10px;
+  }
+
+  .mesero-modal {
+    max-height: calc(100dvh - 20px);
+  }
+
+  .mesero-modal-header {
+    padding: 18px;
+  }
+
+  .mesero-modal-body {
+    gap: 15px;
+    padding: 17px;
+  }
+
+  .mesero-product-form {
+    grid-template-columns: minmax(0, 1fr) 85px;
+  }
+
+  .mesero-product-form > div:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .mesero-add-button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 380px) {
+  .mesero-page {
+    padding: 10px;
+  }
+
+  .mesero-stats {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .mesero-stat {
+    align-items: center;
+    flex-direction: row;
+  }
+
+  .mesero-section-heading {
+    flex-direction: column;
+  }
+
+  .mesero-order-summary {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .mesero-order-item {
+    grid-template-columns: minmax(0, 1fr) auto 30px;
+    gap: 7px;
+    padding: 11px 8px;
+  }
+
+  .mesero-modal-header h2 {
+    font-size: 21px;
+  }
+
+  .mesero-modal-body {
+    padding: 13px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mesero-page *,
+  .mesero-page *::before,
+  .mesero-page *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
